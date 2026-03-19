@@ -6337,6 +6337,35 @@ Thanks,
             currentEstimateForEmail = null;
         }
         
+        async function testResendEmail() {
+            const email = businessSettings?.email || prompt('Enter your email to test:');
+            if (!email) return;
+            const btn = event.target;
+            btn.disabled = true; btn.textContent = '⏳ Testing...';
+            try {
+                const res = await fetch('/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: email,
+                        subject: '✅ QuickEstimate Email Test',
+                        html: '<h2 style="color:#10b981">It works!</h2><p>Your QuickEstimate direct email is configured correctly. You can now send estimates directly to clients.</p>',
+                        from_name: businessSettings?.name || 'QuickEstimate',
+                        from_email: businessSettings?.email || ''
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || 'Test failed');
+                btn.textContent = '✅ Test sent!';
+                btn.style.background = '#16a34a';
+                btn.style.color = '#fff';
+                setTimeout(() => { btn.disabled = false; btn.textContent = '🧪 Test Email'; btn.style.background = ''; btn.style.color = ''; }, 3000);
+            } catch(err) {
+                btn.disabled = false; btn.textContent = '🧪 Test Email';
+                alert('❌ Test failed: ' + err.message + '\n\nMake sure:\n1. RESEND_API_KEY is set in Netlify Environment Variables\n2. send-email.js is in netlify/functions/ folder\n3. Site has been redeployed');
+            }
+        }
+
         // ── EmailJS Config Management ─────────────────────────
         function loadEmailJSConfig() {
             const cfg = JSON.parse(localStorage.getItem('qe_emailjs') || '{}');
@@ -6379,9 +6408,13 @@ Thanks,
             if (active) {
                 el.textContent = '✅ Active';
                 el.className = 'ml-auto text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400';
+                const banner = document.getElementById('email-configured-banner');
+                if (banner) banner.classList.remove('hidden');
             } else {
                 el.textContent = 'Not configured';
                 el.className = 'ml-auto text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400';
+                const banner = document.getElementById('email-configured-banner');
+                if (banner) banner.classList.add('hidden');
             }
         }
 
@@ -6411,40 +6444,93 @@ Thanks,
             return !!(window._ejsService && window._ejsTemplate && window._ejsKey);
         }
 
+        async function testDirectEmail(btn) {
+            const email = businessSettings?.email || prompt('Enter your email to receive the test:');
+            if (!email) return;
+            const orig = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = '⏳ Sending...';
+            const result = document.getElementById('email-test-result');
+            try {
+                const res = await fetch('/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: email,
+                        subject: '✅ QuickEstimate Direct Email Test',
+                        html: `<div style="font-family:sans-serif;max-width:580px;margin:0 auto;padding:24px">
+                            <h2 style="color:#10b981;margin:0 0 16px">It works! 🎉</h2>
+                            <p style="color:#333;line-height:1.6">Direct email is working perfectly. Your clients will receive estimates just like this — professional, instant, no email app needed.</p>
+                            <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+                            <p style="font-size:12px;color:#888">Sent from QuickEstimate · estimates@quickestimate.app</p>
+                        </div>`,
+                        from_name: businessSettings?.name || 'QuickEstimate',
+                        reply_to: email
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error);
+                if (result) { result.className = 'mb-4 p-3 rounded-lg text-sm font-medium bg-green-500/10 text-green-400 border border-green-500/20'; result.textContent = `✅ Test email sent to ${email} — check your inbox!`; result.classList.remove('hidden'); }
+                btn.innerHTML = '✅ Sent!';
+                setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; }, 3000);
+            } catch(err) {
+                if (result) { result.className = 'mb-4 p-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20'; result.textContent = `❌ ${err.message} — Make sure the Netlify function is deployed and RESEND_API_KEY is set.`; result.classList.remove('hidden'); }
+                btn.disabled = false; btn.innerHTML = orig;
+            }
+        }
+
+        // ── Resend/EmailJS send ────────────────────────────────
         async function sendEmail() {
             const to      = document.getElementById('emailTo').value.trim();
             const subject = document.getElementById('emailSubject').value.trim();
             const body    = document.getElementById('emailBody').value.trim();
             if (!to) { alert('Please enter recipient email'); return; }
 
-            if (isEmailJSConfigured()) {
-                const btn = document.querySelector('#emailModal button[onclick="sendEmail()"]');
-                const origHTML = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '⏳ Sending...';
-                try {
-                    await emailjs.send(window._ejsService, window._ejsTemplate, {
-                        to_email:  to,
-                        to_name:   to.split('@')[0],
-                        subject:   subject,
-                        message:   body,
-                        from_name: businessSettings.name || 'QuickEstimate',
-                        reply_to:  businessSettings.email || '',
-                    }, window._ejsKey);
-                    btn.innerHTML = '✅ Sent!';
-                    btn.style.background = '#16a34a';
-                    setTimeout(() => { closeEmailModal(); btn.disabled = false; btn.innerHTML = origHTML; btn.style.background = ''; }, 1800);
-                } catch(err) {
-                    btn.disabled = false;
-                    btn.innerHTML = origHTML;
-                    alert('❌ Send failed: ' + (err.text || err.message || JSON.stringify(err)));
-                }
-                return;
-            }
+            const btn = document.querySelector('#emailModal button[onclick="sendEmail()"]');
+            const origHTML = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Sending...'; }
 
-            // Fallback: mailto
-            window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            setTimeout(() => closeEmailModal(), 500);
+            try {
+                const biz = businessSettings || {};
+                const htmlBody = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:580px;margin:0 auto;padding:24px;color:#1a1a1a">
+                    ${biz.logo ? `<img src="${biz.logo}" style="max-height:56px;max-width:160px;object-fit:contain;margin-bottom:20px">` : `<h2 style="color:#10b981;margin:0 0 20px;font-size:1.2rem">${biz.name || 'QuickEstimate'}</h2>`}
+                    <div style="line-height:1.7;font-size:0.95rem">${body.replace(/\n/g, '<br>')}</div>
+                    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+                    <p style="font-size:0.75rem;color:#6b7280;margin:0">${[biz.name, biz.phone, biz.email].filter(Boolean).join(' · ')}</p>
+                </div>`;
+
+                const res = await fetch('/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to,
+                        subject,
+                        html: htmlBody,
+                        from_name: biz.name || 'QuickEstimate',
+                        reply_to: biz.email || ''
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || 'Send failed');
+
+                if (btn) { btn.innerHTML = '✅ Sent!'; btn.style.background = '#16a34a'; }
+                setTimeout(() => {
+                    closeEmailModal();
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; btn.style.background = ''; }
+                    const toast = document.createElement('div');
+                    toast.textContent = `✅ Email sent to ${to}`;
+                    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }, 1500);
+
+            } catch(err) {
+                if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+                // Fallback to mailto if function not deployed
+                if (confirm(`⚠️ Direct email not available yet.\n\nError: ${err.message}\n\nOpen in your email app instead?`)) {
+                    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    setTimeout(() => closeEmailModal(), 500);
+                }
+            }
         }
         
         function copyEmailContent() {
@@ -11769,51 +11855,29 @@ Thanks,
         </div>
     </div>
 
-    <!-- EmailJS Setup -->
+    <!-- Direct Email Setup -->
     <div class="bg-card rounded-lg border border-border/40 p-6 mb-4">
         <div class="flex items-center gap-3 mb-4">
             <div class="bg-purple-500/20 p-2 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#a855f7" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
             </div>
-            <div>
-                <h3 class="font-semibold">Direct Email Setup</h3>
-                <p class="text-xs text-muted-foreground">Send estimates directly without opening your email app</p>
+            <div class="flex-1">
+                <h3 class="font-semibold">Direct Email</h3>
+                <p class="text-xs text-muted-foreground">Send estimates directly to clients — no setup needed</p>
             </div>
-            <div id="emailjs-status" class="ml-auto text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">Not configured</div>
+            <div id="emailjs-status" class="ml-auto text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">✅ Ready</div>
         </div>
 
-        <div class="bg-background/50 rounded-lg p-4 mb-4 text-sm">
-            <p class="font-semibold mb-2">📋 Quick Setup (5 minutes, free):</p>
-            <ol class="text-muted-foreground space-y-1 list-decimal list-inside text-xs">
-                <li>Go to <a href="https://emailjs.com/" target="_blank" class="text-primary underline">emailjs.com</a> → Create free account</li>
-                <li>Add Email Service → Connect your Gmail or Outlook</li>
-                <li>Create Email Template → use variables: <code class="bg-card px-1 rounded">{{to_email}}</code>, <code class="bg-card px-1 rounded">{{subject}}</code>, <code class="bg-card px-1 rounded">{{message}}</code>, <code class="bg-card px-1 rounded">{{from_name}}</code></li>
-                <li>Copy your keys below and save</li>
-            </ol>
-        </div>
+        <div id="email-test-result" class="hidden mb-4 p-3 rounded-lg text-sm font-medium"></div>
 
-        <div class="grid grid-cols-1 gap-3 mb-4">
-            <div>
-                <label class="block text-xs text-muted-foreground mb-1">Service ID</label>
-                <input type="text" id="ejs-service" placeholder="service_abc123" class="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary">
-            </div>
-            <div>
-                <label class="block text-xs text-muted-foreground mb-1">Template ID</label>
-                <input type="text" id="ejs-template" placeholder="template_xyz789" class="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary">
-            </div>
-            <div>
-                <label class="block text-xs text-muted-foreground mb-1">Public Key</label>
-                <input type="password" id="ejs-pubkey" placeholder="Your EmailJS public key" class="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary">
-            </div>
-        </div>
+        <p class="text-sm text-muted-foreground mb-4">
+            Emails are sent from <code class="bg-background px-2 py-0.5 rounded border border-border text-xs">estimates@quickestimate.app</code> — clients reply directly to your business email.
+        </p>
+
         <div class="flex gap-2">
-            <button onclick="saveEmailJSConfig()" class="bg-primary hover:bg-primary-dark text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors">
-                💾 Save &amp; Activate
+            <button onclick="testDirectEmail(this)" class="bg-primary hover:bg-primary-dark text-white font-medium px-5 py-2 rounded-lg text-sm">
+                🧪 Send Test Email to Me
             </button>
-            <button onclick="testEmailJS()" class="bg-background hover:bg-card border border-border text-foreground font-medium px-5 py-2 rounded-lg text-sm transition-colors">
-                🧪 Test Send
-            </button>
-            <button onclick="clearEmailJSConfig()" class="text-muted-foreground hover:text-red-400 text-sm px-3">Clear</button>
         </div>
     </div>
     <div class="bg-card rounded-lg border border-border/40 p-6 mb-4">
