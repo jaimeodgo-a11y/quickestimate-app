@@ -3810,6 +3810,7 @@
             if (section === 'account') {
                 updateTrialAccountStatus();
                 loadEmailJSConfig();
+                if (currentUser) updateAccountProfile(currentUser);
             }
             // Init templates when templates section opens
             if (section === 'templates') {
@@ -10968,6 +10969,20 @@ Thanks,
             currentUser = user;
             hideAuthScreen();
             updateUserMenu(user);
+            updateAccountProfile(user);
+        }
+
+        function updateAccountProfile(user) {
+            if (!user) return;
+            const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+            const email = user.email || '';
+            const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
+            const nameEl = document.getElementById('accountName');
+            const emailEl = document.getElementById('accountEmail');
+            const avatarEl = document.getElementById('accountAvatar');
+            if (nameEl) nameEl.textContent = name;
+            if (emailEl) emailEl.textContent = email;
+            if (avatarEl) avatarEl.textContent = initials;
         }
 
         function hideAuthScreen() {
@@ -11892,23 +11907,28 @@ Thanks,
         <p class="text-xs text-muted-foreground">Configure your business profile for estimates and PDFs</p>
     </div>
 
-    <!-- EmailJS Setup -->
+    <!-- User Profile -->
     <div class="bg-card rounded-lg border border-border/40 p-6 mb-4">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="bg-orange-500/20 p-2 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#f97316" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            </div>
+        <div class="flex items-center gap-4 mb-4">
+            <div id="accountAvatar" style="width:56px;height:56px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;color:#10b981;font-weight:800;font-size:22px;flex-shrink:0">?</div>
             <div class="flex-1">
-                <h3 class="font-semibold">Free Trial</h3>
-                <p class="text-xs text-muted-foreground" id="trialAccountStatus">Day 0 of 14 — 14 days remaining (started 3/18/2026)</p>
+                <h3 class="font-semibold text-lg" id="accountName">Loading...</h3>
+                <p class="text-sm text-muted-foreground" id="accountEmail">—</p>
+            </div>
+            <div id="accountBadge" style="font-size:11px;padding:4px 10px;border-radius:100px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;border:1px solid rgba(16,185,129,0.3)">
+                Free Trial
             </div>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="border-t border-border pt-4">
+            <p class="text-xs text-muted-foreground" id="trialAccountStatus">Day 0 of 14 — 14 days remaining</p>
+        </div>
+        <!-- DEV ONLY — hidden in production -->
+        <div id="devTrialButtons" class="hidden mt-3 flex gap-2 flex-wrap">
             <button onclick="resetTrialToToday()" class="bg-background hover:bg-card border border-border text-foreground font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-                🔄 Reset Trial (start from today)
+                🔄 Reset Trial
             </button>
             <button onclick="simulateTrialDays()" class="bg-background hover:bg-card border border-border text-foreground font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-                🧪 Test (set to day 10)
+                🧪 Set to day 10
             </button>
         </div>
     </div>
