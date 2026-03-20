@@ -11051,26 +11051,31 @@ Thanks,
         async function initAuth() {
             const hasSupabase = initSupabase();
 
-            // If Supabase is configured, check for real session
             if (hasSupabase) {
                 try {
                     const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session?.user) { onLoginSuccess(session.user); return; }
+                    if (session?.user) {
+                        onLoginSuccess(session.user);
+                        return;
+                    }
+                    // No session — show login screen
+                    document.getElementById('authScreen').classList.remove('hidden');
+
                     supabaseClient.auth.onAuthStateChange((event, session) => {
                         if (session?.user) onLoginSuccess(session.user);
-                        else if (event === 'SIGNED_OUT') showAuthScreenFn();
+                        else if (event === 'SIGNED_OUT') {
+                            document.getElementById('authScreen').classList.remove('hidden');
+                        }
                     });
-                    // Show login screen only if Supabase is configured
                     return;
                 } catch(e) { console.warn('Auth check error:', e); }
             }
 
-            // No Supabase configured — auto-login as guest (open access)
+            // No Supabase — auto-login as guest
             const demoUser = localStorage.getItem('fieldbid_demo_user');
             if (demoUser) {
                 try { onLoginSuccess(JSON.parse(demoUser)); return; } catch(e) {}
             }
-            // Auto-enter as guest
             simulateLogin('guest@quickestimate.app', 'My Account');
         }
 
@@ -11164,6 +11169,11 @@ Thanks,
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            // Show auth screen immediately if Supabase is configured
+            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+                document.getElementById('authScreen').classList.remove('hidden');
+            }
+
             loadData();
             loadBusinessSettings();
             initTrial();
