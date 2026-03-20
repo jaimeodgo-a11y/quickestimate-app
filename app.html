@@ -10948,11 +10948,16 @@ Thanks,
         }
 
         async function handleLogout() {
-            toggleUserMenu();
-            if (supabaseClient) await supabaseClient.auth.signOut();
-            currentUser = null;
-            localStorage.removeItem('fieldbid_demo_user');
-            showAuthScreenFn();
+            if (confirm('Sign out of QuickEstimate?')) {
+                if (supabaseClient) await supabaseClient.auth.signOut();
+                currentUser = null;
+                localStorage.removeItem('fieldbid_demo_user');
+                // Show auth screen fullscreen
+                document.getElementById('authScreen').classList.remove('hidden');
+                // Close any open menus
+                const dd = document.getElementById('userDropdown');
+                if (dd) dd.style.display = 'none';
+            }
         }
 
         // ── Demo Mode (no Supabase) ───────────────────────────
