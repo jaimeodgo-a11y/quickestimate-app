@@ -30,7 +30,7 @@ exports.handler = async (event) => {
 
   try {
     const payload = {
-      from: `${from_name || 'QuickEstimate'} <onboarding@resend.dev>`,
+      from: `${from_name || 'QuickEstimate'} <estimates@quickestimate.app>`,
       to: [to],
       subject,
       html,
@@ -54,4 +54,3 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
-
