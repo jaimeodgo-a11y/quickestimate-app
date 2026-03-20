@@ -10226,6 +10226,8 @@ Thanks,
                     displayLogo(businessSettings.logo);
                 }
             }
+            // Update account profile card with latest info
+            updateAccountProfile(currentUser);
         }
         
         function handleLogoUpload(input) {
@@ -10973,24 +10975,27 @@ Thanks,
         }
 
         function updateAccountProfile(user) {
-            const nameEl = document.getElementById('accountName');
+            const nameEl  = document.getElementById('accountName');
             const emailEl = document.getElementById('accountEmail');
             const avatarEl = document.getElementById('accountAvatar');
+            if (!nameEl) return; // section not visible yet
 
             let name, email;
-            if (user) {
-                name  = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-                email = user.email || '';
+            if (user?.email) {
+                name  = user.user_metadata?.full_name || user.email.split('@')[0] || 'User';
+                email = user.email;
+            } else if (businessSettings?.name) {
+                name  = businessSettings.name;
+                email = businessSettings.email || '';
             } else {
-                // Fallback to business settings
-                name  = businessSettings?.name || 'Contractor';
-                email = businessSettings?.email || '';
+                name  = 'Contractor';
+                email = '';
             }
 
-            const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
-            if (nameEl)   nameEl.textContent  = name;
-            if (emailEl)  emailEl.textContent = email || 'No email set';
-            if (avatarEl) avatarEl.textContent = initials;
+            const initials = name.trim().split(/\s+/).map(n=>n[0]).join('').toUpperCase().slice(0,2) || 'C';
+            nameEl.textContent  = name;
+            emailEl.textContent = email || 'Add your email in Business Information';
+            avatarEl.textContent = initials;
         }
 
         function hideAuthScreen() {
