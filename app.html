@@ -3810,7 +3810,7 @@
             if (section === 'account') {
                 updateTrialAccountStatus();
                 loadEmailJSConfig();
-                if (currentUser) updateAccountProfile(currentUser);
+                updateAccountProfile(currentUser);
             }
             // Init templates when templates section opens
             if (section === 'templates') {
@@ -10973,15 +10973,23 @@ Thanks,
         }
 
         function updateAccountProfile(user) {
-            if (!user) return;
-            const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-            const email = user.email || '';
-            const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
             const nameEl = document.getElementById('accountName');
             const emailEl = document.getElementById('accountEmail');
             const avatarEl = document.getElementById('accountAvatar');
-            if (nameEl) nameEl.textContent = name;
-            if (emailEl) emailEl.textContent = email;
+
+            let name, email;
+            if (user) {
+                name  = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+                email = user.email || '';
+            } else {
+                // Fallback to business settings
+                name  = businessSettings?.name || 'Contractor';
+                email = businessSettings?.email || '';
+            }
+
+            const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
+            if (nameEl)   nameEl.textContent  = name;
+            if (emailEl)  emailEl.textContent = email || 'No email set';
             if (avatarEl) avatarEl.textContent = initials;
         }
 
