@@ -104,14 +104,14 @@
             color: var(--color-fg);
         }
         input[type="date"]::-webkit-calendar-picker-indicator {
-            opacity: 0.55;
+            opacity: 0.9;
             cursor: pointer;
-            filter: invert(0.2) sepia(0) saturate(1);
+            filter: invert(58%) sepia(62%) saturate(450%) hue-rotate(118deg) brightness(95%);
         }
         .dark input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1) brightness(1.8);
-            opacity: 0.85;
+            opacity: 0.9;
             cursor: pointer;
+            filter: invert(58%) sepia(62%) saturate(450%) hue-rotate(118deg) brightness(120%);
         }
         .templates-grid {
             display: grid;
@@ -319,16 +319,16 @@
 </div>
 
     <!-- TOP NAVIGATION -->
-    <nav style="position:fixed;top:0;left:0;right:0;z-index:50;height:56px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,0.82);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px" class="dark-nav">
+    <nav style="position:fixed;top:0;left:0;right:0;z-index:50;height:60px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,0.82);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px" class="dark-nav">
         <style>
         .dark-nav { background: rgba(255,255,255,0.82) !important; }
         .dark .dark-nav { background: rgba(22,22,26,0.85) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
         .nav-pill { display:flex;align-items:center;background:rgba(120,120,128,0.12);border-radius:10px;padding:3px;gap:1px; }
-        .nav-pill a { padding:5px 11px;border-radius:8px;font-size:12px;font-weight:500;color:var(--color-muted);text-decoration:none;transition:all .18s;white-space:nowrap; }
-        .nav-pill a:hover { color:var(--color-fg); }
-        .nav-pill a.bg-primary { background:#10b981 !important;color:#fff !important;font-weight:600;box-shadow:0 1px 4px rgba(16,185,129,.35); }
+        .nav-pill a { padding:6px 13px;border-radius:8px;font-size:13px;font-weight:600;color:var(--color-fg);text-decoration:none;transition:all .18s;white-space:nowrap;opacity:0.7; }
+        .nav-pill a:hover { opacity:1;background:rgba(120,120,128,0.15); }
+        .nav-pill a.bg-primary { background:linear-gradient(135deg,#10b981,#059669) !important;color:#fff !important;font-weight:700;box-shadow:0 2px 8px rgba(16,185,129,.4);opacity:1; }
         .nav-divider { width:1px;height:18px;background:rgba(120,120,128,0.25);margin:0 4px; }
-        main { padding-top: 56px !important; }
+        main { padding-top: 60px !important; }
         </style>
 
         <!-- Logo -->
@@ -351,7 +351,7 @@
             <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);opacity:.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
             <input type="text" id="globalSearch" placeholder="Search..." oninput="handleGlobalSearch(this.value)"
                 style="width:100%;background:rgba(120,120,128,0.12);border:none;border-radius:9px;padding:6px 10px 6px 28px;font-size:13px;outline:none;color:var(--color-fg)">
-            <div id="searchResults" class="hidden" style="position:absolute;top:100%;left:0;right:0;margin-top:6px;background:var(--color-card);border:1px solid var(--color-border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:320px;overflow-y:auto;z-index:50">
+            <div id="searchResults" class="hidden" style="position:absolute;top:100%;left:50%;transform:translateX(-50%);width:480px;margin-top:8px;background:var(--color-card);border:1px solid var(--color-border);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:420px;overflow-y:auto;z-index:200">
                 <div id="searchResultsList" style="padding:6px"></div>
             </div>
         </div>
@@ -10653,100 +10653,124 @@ Thanks,
         }
         
         function performSearch(query) {
-            const lowerQuery = query.toLowerCase();
+            const q = query.toLowerCase();
             const results = [];
-            
-            // Search in estimates
+
+            // ── Estimates ──────────────────────────────────────
             estimates.forEach(est => {
                 let score = 0;
-                let matchedFields = [];
-                
-                // Search project name
-                if (est.projectName && est.projectName.toLowerCase().includes(lowerQuery)) {
-                    score += 10;
-                    matchedFields.push('project');
-                }
-                
-                // Search client name
-                if (est.clientName && est.clientName.toLowerCase().includes(lowerQuery)) {
-                    score += 8;
-                    matchedFields.push('client');
-                }
-                
-                // Search by amount (allow searching like "15000" or "15k")
-                const totalPrice = est.totalPrice || est.total || 0;
-                const searchAmount = query.replace(/[,$k]/gi, '');
-                if (!isNaN(searchAmount) && searchAmount) {
-                    const amount = parseFloat(searchAmount) * (query.toLowerCase().includes('k') ? 1000 : 1);
-                    if (Math.abs(totalPrice - amount) < 100) {
-                        score += 5;
-                        matchedFields.push('amount');
-                    }
-                }
-                
-                // Search invoice number
-                if (est.invoiceNumber && est.invoiceNumber.toLowerCase().includes(lowerQuery)) {
-                    score += 9;
-                    matchedFields.push('invoice');
-                }
-                
-                // Search internal notes
-                if (est.internalNotes && est.internalNotes.toLowerCase().includes(lowerQuery)) {
-                    score += 3;
-                    matchedFields.push('notes');
-                }
-                
-                if (score > 0) {
-                    results.push({ estimate: est, score, matchedFields });
-                }
+                if (est.projectName?.toLowerCase().includes(q)) score += 10;
+                if (est.clientName?.toLowerCase().includes(q)) score += 8;
+                if (est.estimateNumber?.toLowerCase().includes(q)) score += 9;
+                if (est.internalNotes?.toLowerCase().includes(q)) score += 3;
+                if (est.serviceDescription?.toLowerCase().includes(q)) score += 3;
+                // Search line items
+                (est.lineItems||[]).forEach(item => {
+                    if (item.name?.toLowerCase().includes(q)) score += 4;
+                });
+                if (score > 0) results.push({ type: 'estimate', item: est, score });
             });
-            
-            // Sort by score
+
+            // ── Templates ──────────────────────────────────────
+            templates.forEach(tmpl => {
+                let score = 0;
+                if (tmpl.name?.toLowerCase().includes(q)) score += 10;
+                (tmpl.items||[]).forEach(item => {
+                    if (item.name?.toLowerCase().includes(q)) score += 3;
+                });
+                if (score > 0) results.push({ type: 'template', item: tmpl, score });
+            });
+
+            // ── Clients ────────────────────────────────────────
+            (clients||[]).forEach(client => {
+                let score = 0;
+                if (client.name?.toLowerCase().includes(q)) score += 10;
+                if (client.email?.toLowerCase().includes(q)) score += 7;
+                if (client.phone?.toLowerCase().includes(q)) score += 6;
+                if (score > 0) results.push({ type: 'client', item: client, score });
+            });
+
             results.sort((a, b) => b.score - a.score);
-            
-            displaySearchResults(results.slice(0, 10)); // Top 10 results
+            displaySearchResults(results.slice(0, 12));
         }
-        
+
         function displaySearchResults(results) {
             const resultsContainer = document.getElementById('searchResults');
             const resultsList = document.getElementById('searchResultsList');
-            
+
             if (results.length === 0) {
-                resultsList.innerHTML = '<div class="px-4 py-3 text-sm text-muted-foreground">No results found</div>';
+                resultsList.innerHTML = '<div style="padding:12px 16px;font-size:13px;color:var(--color-muted-fg)">No results found</div>';
                 resultsContainer.classList.remove('hidden');
                 return;
             }
-            
-            const html = results.map(({ estimate, matchedFields }) => {
-                const totalPrice = estimate.totalPrice || estimate.total || 0;
-                const statusConfig = getStatusConfig(estimate.status || 'pending');
-                const isInvoice = estimate.type === 'invoice';
-                
-                return `
-                    <div onclick="openEstimateFromSearch(${estimate.id})" class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-border last:border-0">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="font-medium text-sm">${estimate.projectName}</span>
-                                    ${isInvoice ? `<span class="px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">${estimate.invoiceNumber}</span>` : ''}
-                                    <span class="px-1.5 py-0.5 rounded text-xs ${statusConfig.color}">${statusConfig.icon}</span>
-                                </div>
-                                <div class="text-xs text-muted-foreground">${estimate.clientName || 'No client'}</div>
-                                ${matchedFields.includes('notes') ? '<div class="text-xs text-muted-foreground mt-1">📝 Found in notes</div>' : ''}
-                            </div>
-                            <div class="text-right">
-                                <div class="font-medium text-sm text-primary">$${totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                                <div class="text-xs text-muted-foreground">${new Date(estimate.date).toLocaleDateString()}</div>
-                            </div>
+
+            const statusColors = { pending:'#eab308', approved:'#3b82f6', 'in-progress':'#a855f7', completed:'#10b981', cancelled:'#ef4444' };
+
+            const html = results.map(({ type, item }) => {
+                if (type === 'estimate') {
+                    const total = item.totalPrice || item.total || 0;
+                    const sc = statusColors[item.status||'pending'] || '#9ca3af';
+                    return `<div onclick="openEstimateFromSearch(${item.id})" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:10px" onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="font-size:1.1rem">📄</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.projectName||'Untitled'}</div>
+                            <div style="font-size:11px;color:var(--color-muted-fg)">${item.clientName||'—'} · <span style="color:${sc}">${(item.status||'pending').replace('-',' ')}</span></div>
                         </div>
-                    </div>
-                `;
+                        <div style="font-size:12px;font-weight:700;color:#10b981;flex-shrink:0">$${total.toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+                    </div>`;
+                }
+                if (type === 'template') {
+                    const emoji = item.name.match(/^(\p{Emoji})/u)?.[1] || '📋';
+                    const name = item.name.replace(/^[\p{Emoji}\s]+/u,'');
+                    return `<div onclick="openTemplateFromSearch(${item.id})" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:10px" onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="font-size:1.1rem">${emoji}</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:13px;font-weight:600">${name}</div>
+                            <div style="font-size:11px;color:var(--color-muted-fg)">Template · ${(item.items||[]).length} items</div>
+                        </div>
+                        <div style="font-size:10px;color:var(--color-muted-fg);flex-shrink:0;background:var(--color-bg);padding:2px 8px;border-radius:4px;border:1px solid var(--color-border)">Template</div>
+                    </div>`;
+                }
+                if (type === 'client') {
+                    return `<div onclick="openClientFromSearch('${item.id||item.name}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:10px" onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="font-size:1.1rem">👤</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:13px;font-weight:600">${item.name}</div>
+                            <div style="font-size:11px;color:var(--color-muted-fg)">${[item.email,item.phone].filter(Boolean).join(' · ')||'No contact info'}</div>
+                        </div>
+                        <div style="font-size:10px;color:var(--color-muted-fg);flex-shrink:0;background:var(--color-bg);padding:2px 8px;border-radius:4px;border:1px solid var(--color-border)">Client</div>
+                    </div>`;
+                }
+                return '';
             }).join('');
-            
-            resultsList.innerHTML = html;
+
+            // Group header counts
+            const estCount = results.filter(r=>r.type==='estimate').length;
+            const tmplCount = results.filter(r=>r.type==='template').length;
+            const clientCount = results.filter(r=>r.type==='client').length;
+            const summary = [
+                estCount && `${estCount} estimate${estCount>1?'s':''}`,
+                tmplCount && `${tmplCount} template${tmplCount>1?'s':''}`,
+                clientCount && `${clientCount} client${clientCount>1?'s':''}`
+            ].filter(Boolean).join(' · ');
+
+            resultsList.innerHTML = `<div style="padding:6px 14px 4px;font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">${summary}</div>` + html;
             resultsContainer.classList.remove('hidden');
         }
         
+        function openTemplateFromSearch(id) {
+            hideSearchResults();
+            document.getElementById('globalSearch').value = '';
+            showSection('templates');
+            setTimeout(() => openTemplateDetail(id), 300);
+        }
+
+        function openClientFromSearch(idOrName) {
+            hideSearchResults();
+            document.getElementById('globalSearch').value = '';
+            showSection('clients');
+        }
+
         function hideSearchResults() {
             document.getElementById('searchResults').classList.add('hidden');
         }
