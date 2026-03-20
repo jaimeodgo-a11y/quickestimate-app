@@ -1,0 +1,19 @@
+[build]
+  publish = "."
+  command = ""
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# app.quickestimate.app → serve app.html
+[[redirects]]
+  from = "https://app.quickestimate.app/*"
+  to = "/app.html"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
