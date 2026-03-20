@@ -6066,18 +6066,52 @@ function acceptEstimate() {
     document.getElementById('accepted-banner').scrollIntoView({behavior:'smooth'});
 }
 
-function sendByEmail() {
-    const subject = encodeURIComponent('Your Estimate is Ready \u2014 ${est.projectName}');
+async function sendByEmail() {
+    const btn = document.querySelector('.btn[onclick="sendByEmail()"]');
+    const clientEmail = prompt('Enter client email address:');
+    if (!clientEmail) return;
+
     const grand = document.getElementById('grand-total').textContent;
-    const body = encodeURIComponent(
-        'Hi ${est.clientName||"there"},\\n\\n' +
-        'Your estimate for ${est.projectName} is ready.\\n\\n' +
-        'Estimate #: ${docNum}\\n' +
-        'Total: ' + grand + '\\n\\n' +
-        'Open this page in your browser to review, select services and sign.\\n\\n' +
-        'Thank you,\\n${bizName}\\n${bizContact}'
-    );
-    window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+    const subject = 'Your Estimate is Ready — ${est.projectName}';
+    const bodyText = 'Hi ${est.clientName||"there"},\\n\\nYour estimate for ${est.projectName} is ready.\\n\\nEstimate #: ${docNum}\\nTotal: ' + grand + '\\n\\nPlease review and sign at the link below.\\n\\nThank you,\\n${bizName}\\n${bizContact}';
+
+    const htmlBody = '<div style="font-family:sans-serif;max-width:580px;margin:0 auto;padding:24px">' +
+        '<h2 style="color:#10b981">Your Estimate is Ready</h2>' +
+        '<p>Hi ${est.clientName||"there"},</p>' +
+        '<p>Your estimate for <strong>${est.projectName}</strong> is ready to review.</p>' +
+        '<table style="width:100%;border-collapse:collapse;margin:16px 0">' +
+        '<tr><td style="padding:8px;border-bottom:1px solid #eee">Estimate #</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold">${docNum}</td></tr>' +
+        '<tr><td style="padding:8px">Total</td><td style="padding:8px;font-weight:bold;color:#10b981;font-size:1.2rem">' + grand + '</td></tr>' +
+        '</table>' +
+        '<p style="color:#666;font-size:0.9rem">Please review all services and sign to accept.</p>' +
+        '<hr style="border:none;border-top:1px solid #eee;margin:20px 0">' +
+        '<p style="font-size:0.75rem;color:#999">${bizName} · ${bizContact}</p>' +
+        '</div>';
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+
+    try {
+        const res = await fetch('https://quickestimate.app/.netlify/functions/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: clientEmail,
+                subject: subject,
+                html: htmlBody,
+                from_name: '${bizName || "QuickEstimate"}',
+                reply_to: '${biz.email || ""}'
+            })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Send failed');
+
+        if (btn) { btn.innerHTML = '✅ Sent!'; btn.style.background = '#16a34a'; }
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = '✉ Share via Email'; btn.style.background = '#7c3aed'; } }, 3000);
+    } catch(err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '✉ Share via Email'; }
+        // Fallback to mailto
+        window.location.href = 'mailto:' + clientEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(bodyText);
+    }
 }
 
 // Init
