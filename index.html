@@ -475,7 +475,15 @@ h1{animation-delay:.2s}
       </ul>
 
       <a href="#signup" class="plan-btn primary" style="display:block;text-align:center;text-decoration:none;font-size:17px;padding:16px;margin-bottom:12px">⚡ Start Free Trial</a>
-      <a href="https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03" target="_blank" class="plan-btn outline" style="display:block;text-align:center;text-decoration:none;line-height:1;border-color:rgba(0,232,122,0.4);color:#00e87a;padding:14px">Subscribe $29/mo →</a>
+      <a href="#" onclick="goToStripe()" class="plan-btn outline" style="display:block;text-align:center;text-decoration:none;line-height:1;border-color:rgba(0,232,122,0.4);color:#00e87a;padding:14px">Subscribe $29/mo →</a>
+
+<script>
+function goToStripe() {
+    const email = document.getElementById('signup-email')?.value?.trim() || '';
+    const url = 'https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03';
+    window.open(email ? `${url}?prefilled_email=${encodeURIComponent(email)}` : url, '_blank');
+}
+</script>
     </div>
   </div>
 
