@@ -245,7 +245,7 @@
             </div>
             <button class="auth-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
             <div style="text-align:right;margin-top:10px">
-                <a href="file:///Users/jaimeortega/Library/Mobile%20Documents/com~apple~CloudDocs/Documents/Estimateflow/index/index.html#" onclick="showForgotPassword()" style="font-size:13px;color:#10b981;text-decoration:none">Forgot password?</a>
+                <a href="#" onclick="showForgotPassword()" style="font-size:13px;color:#10b981;text-decoration:none">Forgot password?</a>
             </div>
         </div>
 
@@ -279,7 +279,7 @@
             </div>
             <button class="auth-btn" id="forgotBtn" onclick="handleForgotPassword()">Send Reset Link</button>
             <div style="text-align:center;margin-top:12px">
-                <a href="file:///Users/jaimeortega/Library/Mobile%20Documents/com~apple~CloudDocs/Documents/Estimateflow/index/index.html#" onclick="switchAuthTab(&#39;login&#39;)" style="font-size:13px;color:#10b981;text-decoration:none">← Back to Sign In</a>
+                <a href="#" onclick="switchAuthTab('login')" style="font-size:13px;color:#10b981;text-decoration:none">← Back to Sign In</a>
             </div>
         </div>
 
@@ -10918,10 +10918,10 @@ Thanks,
             setAuthBtnLoading('forgotBtn', true, 'Send Reset Link');
             try {
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.href + '?reset=1'
+                    redirectTo: 'https://app.quickestimate.app'
                 });
                 if (error) throw error;
-                showAuthSuccess('✅ Password reset link sent to ' + email);
+                showAuthSuccess('✅ Reset link sent to ' + email + ' — check your inbox!');
             } catch(e) {
                 showAuthError(e.message || 'Failed to send reset email.');
             } finally {
@@ -11033,15 +11033,26 @@ Thanks,
 
             if (hasSupabase) {
                 try {
+                    // Handle password reset redirect
+                    const hash = window.location.hash;
+                    if (hash.includes('type=recovery')) {
+                        document.getElementById('authScreen').classList.remove('hidden');
+                        showResetPasswordForm();
+                        return;
+                    }
+
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session?.user) {
                         onLoginSuccess(session.user);
                         return;
                     }
-                    // No session — show login screen
                     document.getElementById('authScreen').classList.remove('hidden');
 
                     supabaseClient.auth.onAuthStateChange((event, session) => {
+                        if (event === 'PASSWORD_RECOVERY') {
+                            showResetPasswordForm();
+                            return;
+                        }
                         if (session?.user) onLoginSuccess(session.user);
                         else if (event === 'SIGNED_OUT') {
                             document.getElementById('authScreen').classList.remove('hidden');
@@ -11051,12 +11062,48 @@ Thanks,
                 } catch(e) { console.warn('Auth check error:', e); }
             }
 
-            // No Supabase — auto-login as guest
             const demoUser = localStorage.getItem('fieldbid_demo_user');
             if (demoUser) {
                 try { onLoginSuccess(JSON.parse(demoUser)); return; } catch(e) {}
             }
             simulateLogin('guest@quickestimate.app', 'My Account');
+        }
+
+        function showResetPasswordForm() {
+            // Show a simple reset password UI
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('forgotForm').style.display = 'none';
+            document.querySelector('.auth-tabs').style.display = 'none';
+            document.querySelector('.auth-divider').style.display = 'none';
+            document.querySelector('.auth-google').style.display = 'none';
+
+            const card = document.querySelector('.auth-card');
+            const resetDiv = document.createElement('div');
+            resetDiv.id = 'resetForm';
+            resetDiv.innerHTML = `
+                <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;color:#f0f0f0">Set New Password</h3>
+                <p style="font-size:13px;color:#888;margin-bottom:20px">Enter your new password below.</p>
+                <div class="auth-field">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="Min. 8 characters" style="width:100%;background:#0d0d0d;border:1px solid rgba(255,255,255,0.1);color:#f0f0f0;padding:12px 16px;border-radius:10px;font-size:15px;outline:none">
+                </div>
+                <button onclick="handlePasswordReset()" class="auth-btn" style="margin-top:16px">Update Password →</button>
+            `;
+            card.appendChild(resetDiv);
+        }
+
+        async function handlePasswordReset() {
+            const password = document.getElementById('newPassword').value;
+            if (!password || password.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password });
+                if (error) throw error;
+                showAuthSuccess('✅ Password updated! Signing you in...');
+                setTimeout(() => window.location.href = 'https://app.quickestimate.app', 2000);
+            } catch(e) {
+                showAuthError(e.message || 'Failed to update password.');
+            }
         }
 
         // ==================== SUPABASE SYNC ====================
