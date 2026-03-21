@@ -120,6 +120,56 @@
         }
         @media (max-width: 900px)  { .templates-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
         @media (max-width: 600px)  { .templates-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+        /* ── MOBILE RESPONSIVE ─────────────────────────────── */
+        @media (max-width: 768px) {
+            /* Nav — hide text labels, show only icons */
+            .nav-pill a { padding:5px 8px;font-size:11px; }
+            .nav-pill a span.nav-label { display:none; }
+            #globalSearch { width:120px !important; }
+
+            /* Main content padding */
+            main { padding-left:8px !important; padding-right:8px !important; }
+
+            /* Dashboard cards — 1 column on mobile */
+            .grid-cols-4, .grid-cols-3 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+
+            /* Kanban — stack columns vertically */
+            .kanban-board { flex-direction:column !important; }
+            .kanban-col { min-width:unset !important; width:100% !important; }
+
+            /* Estimate form — full width inputs */
+            .grid-cols-2 { grid-template-columns:1fr !important; }
+
+            /* Modals — full screen on mobile */
+            .modal-content, [class*="max-w-"] { max-width:100% !important; margin:0 !important; border-radius:16px 16px 0 0 !important; }
+            [style*="max-width:700px"], [style*="max-width:600px"], [style*="max-width:560px"] {
+                max-width:100% !important;
+                margin: 8px !important;
+                border-radius: 16px !important;
+            }
+
+            /* Buttons — bigger tap targets */
+            button { min-height:40px; }
+
+            /* Tables — scroll horizontally */
+            table { display:block; overflow-x:auto; }
+
+            /* Search results wider on mobile */
+            #searchResults { width:calc(100vw - 32px) !important; left:50% !important; transform:translateX(-50%) !important; }
+
+            /* Hide less important nav items on small screens */
+            .nav-pill:last-child a:nth-child(n+4) { display:none; }
+        }
+
+        @media (max-width: 480px) {
+            /* Extra small — phones */
+            .nav-pill a { padding:4px 6px;font-size:10px; }
+            .nav-pill a svg { width:14px;height:14px; }
+            .grid-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+            /* Stats cards — 2 col */
+            section > div > .grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+        }
         [contenteditable][data-placeholder]:empty:before {
             content: attr(data-placeholder);
             color: #9ca3af;
@@ -3704,6 +3754,48 @@
 
         </div> <!-- close p-8 -->
     </div></main>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav id="mobileBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:49;background:var(--color-card);border-top:1px solid var(--color-border);padding:8px 4px 12px;backdrop-filter:blur(20px)">
+    <div style="display:flex;justify-content:space-around;align-items:center">
+        <button onclick="showSection('dashboard')" class="mob-nav-btn" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--color-muted-fg);cursor:pointer;padding:4px 8px;border-radius:8px;min-width:48px">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span style="font-size:9px;font-weight:600">Home</span>
+        </button>
+        <button onclick="showSection('estimates')" class="mob-nav-btn" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--color-muted-fg);cursor:pointer;padding:4px 8px;border-radius:8px;min-width:48px">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style="font-size:9px;font-weight:600">Estimates</span>
+        </button>
+        <button onclick="showNewEstimate()" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;cursor:pointer;padding:8px;border-radius:50%;width:48px;height:48px;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.4);margin-bottom:4px">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button onclick="showSection('templates')" class="mob-nav-btn" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--color-muted-fg);cursor:pointer;padding:4px 8px;border-radius:8px;min-width:48px">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="17" x2="20" y2="17"/><line x1="17" y1="14" x2="17" y2="20"/></svg>
+            <span style="font-size:9px;font-weight:600">Templates</span>
+        </button>
+        <button onclick="showSection('account')" class="mob-nav-btn" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--color-muted-fg);cursor:pointer;padding:4px 8px;border-radius:8px;min-width:48px">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span style="font-size:9px;font-weight:600">Account</span>
+        </button>
+    </div>
+</nav>
+
+<script>
+// Show mobile bottom nav on small screens
+function checkMobileNav() {
+    const mob = document.getElementById('mobileBottomNav');
+    if (!mob) return;
+    if (window.innerWidth <= 768) {
+        mob.style.display = 'block';
+        document.querySelector('main').style.paddingBottom = '72px';
+    } else {
+        mob.style.display = 'none';
+        document.querySelector('main').style.paddingBottom = '';
+    }
+}
+window.addEventListener('resize', checkMobileNav);
+document.addEventListener('DOMContentLoaded', checkMobileNav);
+</script>
 
     <!-- ESTIMATE DETAIL — Full page in-app view -->
     <div id="estimateDetailOverlay" class="hidden fixed inset-0 z-40 bg-background overflow-y-auto" style="top:64px">
@@ -10959,8 +11051,13 @@ Thanks,
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
-            // Sync user data from Supabase
-            syncFromSupabase();
+            // Sync user data from Supabase, then check if onboarding needed
+            syncFromSupabase().then(() => {
+                const isNew = !localStorage.getItem('qe_onboarded_' + user.id);
+                if (isNew && !businessSettings?.name) {
+                    showOnboarding(user);
+                }
+            });
         }
 
         function updateAccountProfile(user) {
@@ -12291,6 +12388,74 @@ Thanks,
             <button onclick="addBlankService()" style="width:100%;background:none;border:2px dashed var(--color-border);border-radius:8px;padding:10px;color:var(--color-muted-fg);font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onmouseover="this.style.borderColor='#10b981';this.style.color='#10b981'" onmouseout="this.style.borderColor='var(--color-border)';this.style.color='var(--color-muted-fg)'">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add custom service manually
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div id="onboardingModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:20px;width:100%;max-width:520px;box-shadow:0 24px 80px rgba(0,0,0,.4);overflow:hidden">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px 32px">
+            <div style="font-size:2rem;margin-bottom:8px">👋</div>
+            <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 6px">Welcome to QuickEstimate!</h2>
+            <p style="font-size:0.85rem;color:rgba(255,255,255,0.8);margin:0">Let's set up your business profile — takes 60 seconds</p>
+        </div>
+        <!-- Steps indicator -->
+        <div style="display:flex;gap:6px;padding:16px 32px 0">
+            <div id="ob-step-1-dot" style="flex:1;height:3px;border-radius:3px;background:#10b981"></div>
+            <div id="ob-step-2-dot" style="flex:1;height:3px;border-radius:3px;background:var(--color-border)"></div>
+            <div id="ob-step-3-dot" style="flex:1;height:3px;border-radius:3px;background:var(--color-border)"></div>
+        </div>
+        <!-- Step 1: Business Name -->
+        <div id="ob-step-1" style="padding:24px 32px 32px">
+            <h3 style="font-size:1rem;font-weight:700;margin:0 0 4px">What's your business name?</h3>
+            <p style="font-size:0.8rem;color:var(--color-muted-fg);margin:0 0 16px">This appears on all your estimates</p>
+            <input type="text" id="ob-business-name" placeholder="e.g. Martinez Landscaping" autofocus
+                style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:10px;padding:12px 16px;font-size:1rem;color:var(--color-fg);outline:none;box-sizing:border-box;transition:border .2s"
+                onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'"
+                onkeydown="if(event.key==='Enter')obNext(1)">
+            <div style="margin-top:8px">
+                <label style="font-size:0.8rem;color:var(--color-muted-fg);display:block;margin-bottom:6px">What type of contractor?</label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px" id="ob-type-btns">
+                    ${['🧱 Pavers','🏗️ Concrete','🎨 Painting','🪵 Carpentry','🏠 Flooring','🔧 General','💧 Plumbing','⚡ Electrical'].map(t=>`<button onclick="obSelectType(this,'${t}')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">${t}</button>`).join('')}
+                </div>
+            </div>
+            <button onclick="obNext(1)" style="width:100%;margin-top:20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer">
+                Continue →
+            </button>
+        </div>
+        <!-- Step 2: Contact Info -->
+        <div id="ob-step-2" style="display:none;padding:24px 32px 32px">
+            <h3 style="font-size:1rem;font-weight:700;margin:0 0 4px">Contact information</h3>
+            <p style="font-size:0.8rem;color:var(--color-muted-fg);margin:0 0 16px">Shown on estimates so clients can reach you</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <input type="tel" id="ob-phone" placeholder="📞 Phone number"
+                    style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:10px;padding:12px 16px;font-size:0.9rem;color:var(--color-fg);outline:none;box-sizing:border-box"
+                    onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                <input type="email" id="ob-email" placeholder="📧 Business email"
+                    style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:10px;padding:12px 16px;font-size:0.9rem;color:var(--color-fg);outline:none;box-sizing:border-box"
+                    onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                <input type="text" id="ob-city" placeholder="📍 City, State"
+                    style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:10px;padding:12px 16px;font-size:0.9rem;color:var(--color-fg);outline:none;box-sizing:border-box"
+                    onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px">
+                <button onclick="obBack(2)" style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);color:var(--color-fg);border-radius:10px;padding:14px;font-size:0.9rem;cursor:pointer">← Back</button>
+                <button onclick="obNext(2)" style="flex:2;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer">Continue →</button>
+            </div>
+        </div>
+        <!-- Step 3: Ready -->
+        <div id="ob-step-3" style="display:none;padding:24px 32px 32px;text-align:center">
+            <div style="font-size:3rem;margin-bottom:12px">🚀</div>
+            <h3 style="font-size:1.2rem;font-weight:800;margin:0 0 8px">You're all set!</h3>
+            <p style="font-size:0.85rem;color:var(--color-muted-fg);margin:0 0 24px">Your first estimate takes less than 60 seconds. Let's go!</p>
+            <div style="background:var(--color-bg);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+                <div id="ob-summary" style="font-size:0.85rem;color:var(--color-fg);line-height:2"></div>
+            </div>
+            <button onclick="finishOnboarding()" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer">
+                ⚡ Create My First Estimate →
             </button>
         </div>
     </div>
