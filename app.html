@@ -411,26 +411,7 @@
                 <svg id="theme-icon-light" class="hidden dark:block" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2m-7.07-14.07 1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2m-4.93-7.07-1.41 1.41M6.34 17.66l-1.41 1.41"></path></svg>
                 <svg id="theme-icon-dark" class="block dark:hidden" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
             </button>
-            <div id="navUserMenu">
-                <div style="position:relative">
-                    <button onclick="toggleUserMenu()" style="display:flex;align-items:center;gap:6px;background:rgba(120,120,128,0.12);border:none;border-radius:8px;padding:5px 10px 5px 5px;cursor:pointer">
-                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;color:#10b981;font-weight:700;font-size:11px">C</div>
-                        <span style="font-size:12px;font-weight:500;color:var(--color-fg);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Contractor</span>
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </button>
-                    <div id="userDropdown" style="display:none;position:absolute;right:0;top:100%;margin-top:8px;background:var(--color-card);border:1px solid var(--color-border);border-radius:14px;padding:8px;min-width:190px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-                        <div style="padding:10px 14px;opacity:.6">
-                            <div style="font-weight:600;font-size:13px">Contractor</div>
-                            <div style="font-size:11px;color:#888"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="11766474626551606478727a746265787c7065743f706161">[email&#160;protected]</a></div>
-                        </div>
-                        <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
-                        <div onclick="showSection(&#39;account&#39;);toggleUserMenu()" style="padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=&#39;rgba(255,255,255,0.06)&#39;" onmouseout="this.style.background=&#39;&#39;">⚙️ &nbsp;Account Settings</div>
-                        <div onclick="exportAllData()" style="padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=&#39;rgba(255,255,255,0.06)&#39;" onmouseout="this.style.background=&#39;&#39;">📤 &nbsp;Export My Data</div>
-                        <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
-                        <div onclick="handleLogout()" style="padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer;color:#f87171;transition:background .15s" onmouseover="this.style.background=&#39;rgba(255,255,255,0.06)&#39;" onmouseout="this.style.background=&#39;&#39;">🚪 &nbsp;Sign Out</div>
-                    </div>
-                </div>
-            </div>
+            <div id="navUserMenu"></div>
         </div>
     </nav>
 
