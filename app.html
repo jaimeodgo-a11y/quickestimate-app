@@ -11016,11 +11016,11 @@ Thanks,
         }
 
         async function handleGoogleLogin() {
-            if (!supabaseClient) { simulateLogin('demo@fieldbidpro.com', 'Demo User'); return; }
+            if (!supabaseClient) { simulateLogin('demo@quickestimate.app', 'Demo User'); return; }
             try {
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { redirectTo: window.location.href }
+                    options: { redirectTo: 'https://app.quickestimate.app' }
                 });
                 if (error) throw error;
             } catch(e) {
