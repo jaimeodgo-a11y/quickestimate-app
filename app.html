@@ -6762,12 +6762,37 @@ Thanks,
         // ==================== TRIAL COUNTDOWN ====================
         const TRIAL_DAYS = 14;
 
+        async function checkSubscriptionStatus() {
+            if (!supabaseClient || !currentUser) return null;
+            try {
+                const { data } = await supabaseClient
+                    .from('subscriptions')
+                    .select('status, current_period_end')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                return data;
+            } catch(e) { return null; }
+        }
+
         function initTrial() {
-            // Only set start date if it's never been set before
             if (!localStorage.getItem('qe_trial_start')) {
                 localStorage.setItem('qe_trial_start', new Date().toISOString());
             }
-            renderTrialBanner();
+            // Check subscription status first
+            checkSubscriptionStatus().then(sub => {
+                if (sub?.status === 'active') {
+                    // Hide trial banner — user is paying
+                    const banner = document.getElementById('trialBanner');
+                    if (banner) banner.style.display = 'none';
+                    // Update account badge
+                    const badge = document.getElementById('accountBadge');
+                    if (badge) { badge.textContent = '✅ Pro'; badge.style.background = 'rgba(16,185,129,0.2)'; badge.style.color = '#10b981'; }
+                    const statusEl = document.getElementById('trialAccountStatus');
+                    if (statusEl) statusEl.textContent = 'Active subscriber — Pro plan';
+                } else {
+                    renderTrialBanner();
+                }
+            });
         }
 
         function getTrialDaysLeft() {
