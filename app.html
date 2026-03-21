@@ -4578,7 +4578,7 @@
                 comments: []
             });
 
-            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             closeEstimateForm();
             renderKanban();
 
@@ -4919,7 +4919,7 @@
             const est = estimates.find(e => e.id === kanbanDragId);
             if (est) {
                 est.status = newStatus;
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 renderKanban();
             }
             kanbanDragId = null;
@@ -5043,7 +5043,7 @@
             const estimate = estimates.find(e => e.id === id);
             if (estimate) {
                 estimate.status = newStatus;
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 renderKanban();
             }
         }
@@ -5072,7 +5072,7 @@
             dueDate.setDate(dueDate.getDate() + 30);
             estimate.dueDate = dueDate.toISOString().split('T')[0];
             
-            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             renderKanban();
             
             alert(`Converted to Invoice ${invoiceNumber}!`);
@@ -5094,7 +5094,7 @@
             estimate.paymentDate = new Date().toISOString().split('T')[0];
             estimate.status = 'completed';
             
-            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             renderKanban();
             
             alert('Marked as paid!');
@@ -5114,7 +5114,7 @@
         function deleteEstimate(id) {
             if (confirm('Delete this estimate?')) {
                 estimates = estimates.filter(e => e.id !== id);
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 renderKanban();
             }
         }
@@ -5202,7 +5202,7 @@
                     estimateNumber: document.getElementById('estimateNumber').value.trim() || estimates[estimateIndex].estimateNumber
                 };
                 
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 closeEstimateForm();
                 renderKanban();
             }
@@ -5213,7 +5213,7 @@
             if (original) {
                 const duplicate = {...original, id: Date.now(), projectName: original.projectName + ' (Copy)', date: new Date().toISOString()};
                 estimates.push(duplicate);
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 renderKanban();
             }
         }
@@ -5713,7 +5713,7 @@
             const est = estimates.find(e => e.id === id);
             if (est) {
                 est.status = newStatus;
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 renderKanban();
             }
         }
@@ -7020,7 +7020,7 @@ Thanks,
             templateCategories = templateCategories.filter(c => c.id !== id);
             // Remove category from templates
             templates.forEach(t => { if (t.category === id) delete t.category; });
-            localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+            localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
             saveTemplateCategories();
             renderCategoryBar();
             renderCategoriesList();
@@ -7284,7 +7284,7 @@ Thanks,
             if (currentTemplate) {
                 currentTemplate.taxRate = rate;
                 // Save to localStorage
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
             }
             // Re-render to update tax amount
             renderTemplateItems();
@@ -7337,7 +7337,7 @@ Thanks,
             };
 
             templates.push(newTemplate);
-            localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+            localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
             closeTemplateForm();
             renderTemplatesList();
             renderCategoryBar();
@@ -7370,7 +7370,7 @@ Thanks,
                 templates.splice(dropIndex, 0, draggedTemplate);
                 
                 // Save and re-render
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
                 renderTemplatesList();
             }
         }
@@ -7636,7 +7636,7 @@ Thanks,
         function deleteTemplate(id) {
             if (confirm('Delete this template?')) {
                 templates = templates.filter(t => t.id !== id);
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
                 renderTemplatesList();
             }
         }
@@ -7697,7 +7697,7 @@ Thanks,
                     category: category || undefined,
                     items: JSON.parse(JSON.stringify(currentTemplateItems))
                 };
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
                 closeTemplateForm();
                 renderTemplatesList();
                 renderCategoryBar();
@@ -7715,7 +7715,7 @@ Thanks,
                     date: new Date().toISOString()
                 };
                 templates.push(duplicate);
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
                 renderTemplatesList();
                 renderCategoryBar();
             }
@@ -9100,11 +9100,11 @@ Thanks,
                 if (existingWallPavers && !existingWallPavers.items[0]?.isWallProduct) {
                     existingWallPavers.items = newWallPaversItems;
                 }
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
             } else {
                 // No saved templates — use defaults
                 templates = defaultTemplates;
-                localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
             }
             
             // Load overhead data
@@ -9258,13 +9258,13 @@ Thanks,
                     // Estimates
                     if (data.estimates) {
                         estimates = data.estimates;
-                        localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                        localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                     }
                     
                     // Templates
                     if (data.templates) {
                         templates = data.templates;
-                        localStorage.setItem('estimateflow_templates', JSON.stringify(templates));
+                        localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
                     }
                     
                     // Overhead
@@ -9437,7 +9437,7 @@ Thanks,
                 });
             }
             
-            localStorage.setItem('estimateflow_clients', JSON.stringify(clients));
+            localStorage.setItem('estimateflow_clients', JSON.stringify(clients)); saveClientsToSupabase();
             closeClientForm();
             renderClientsList();
             alert('Client saved successfully!');
@@ -9555,7 +9555,7 @@ Thanks,
             if (!confirm(`Delete client "${client.name}"?`)) return;
             
             clients = clients.filter(c => c.id !== id);
-            localStorage.setItem('estimateflow_clients', JSON.stringify(clients));
+            localStorage.setItem('estimateflow_clients', JSON.stringify(clients)); saveClientsToSupabase();
             renderClientsList();
         }
         
@@ -10183,6 +10183,7 @@ Thanks,
             };
             
             localStorage.setItem('estimateflow_businessSettings', JSON.stringify(businessSettings));
+            saveBusinessSettingsToSupabase();
             alert('✅ Business settings saved successfully!');
         }
         
@@ -10958,6 +10959,8 @@ Thanks,
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
+            // Sync user data from Supabase
+            syncFromSupabase();
         }
 
         function updateAccountProfile(user) {
@@ -11056,7 +11059,100 @@ Thanks,
             simulateLogin('guest@quickestimate.app', 'My Account');
         }
 
-        // ==================== DASHBOARD ====================
+        // ==================== SUPABASE SYNC ====================
+        // Strategy: localStorage = fast local cache, Supabase = source of truth per user
+
+        async function syncFromSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                // Load estimates
+                const { data: estRows } = await supabaseClient.from('estimates').select('data').order('created_at');
+                if (estRows && estRows.length > 0) {
+                    estimates = estRows.map(r => r.data);
+                    localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
+                    renderKanban();
+                    renderDashboard();
+                }
+                // Load templates
+                const { data: tmplRows } = await supabaseClient.from('templates').select('data').order('created_at');
+                if (tmplRows && tmplRows.length > 0) {
+                    // Only load user templates, keep defaults for new categories
+                    const userTemplates = tmplRows.map(r => r.data);
+                    if (userTemplates.length > 0) {
+                        templates = userTemplates;
+                        localStorage.setItem('estimateflow_templates', JSON.stringify(templates)); saveTemplatesToSupabase();
+                    }
+                }
+                // Load clients
+                const { data: clientRows } = await supabaseClient.from('clients').select('data').order('created_at');
+                if (clientRows && clientRows.length > 0) {
+                    clients = clientRows.map(r => r.data);
+                    localStorage.setItem('estimateflow_clients', JSON.stringify(clients)); saveClientsToSupabase();
+                }
+                // Load business settings
+                const { data: settingsRow } = await supabaseClient.from('business_settings').select('data').eq('user_id', currentUser.id).single();
+                if (settingsRow?.data) {
+                    businessSettings = settingsRow.data;
+                    localStorage.setItem('estimateflow_businessSettings', JSON.stringify(businessSettings));
+                    loadBusinessSettings();
+                }
+            } catch(e) { console.warn('Sync from Supabase error:', e); }
+        }
+
+        async function saveEstimatesToSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                // Upsert all estimates
+                const rows = estimates.map(est => ({
+                    id: est.id,
+                    user_id: currentUser.id,
+                    data: est
+                }));
+                if (rows.length > 0) {
+                    await supabaseClient.from('estimates').upsert(rows, { onConflict: 'id' });
+                }
+            } catch(e) { console.warn('Save estimates error:', e); }
+        }
+
+        async function saveTemplatesToSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                const rows = templates.map(t => ({
+                    id: t.id,
+                    user_id: currentUser.id,
+                    data: t
+                }));
+                if (rows.length > 0) {
+                    await supabaseClient.from('templates').upsert(rows, { onConflict: 'id' });
+                }
+            } catch(e) { console.warn('Save templates error:', e); }
+        }
+
+        async function saveClientsToSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                const rows = clients.map(c => ({
+                    id: String(c.id || c.name),
+                    user_id: currentUser.id,
+                    data: c
+                }));
+                if (rows.length > 0) {
+                    await supabaseClient.from('clients').upsert(rows, { onConflict: 'id' });
+                }
+            } catch(e) { console.warn('Save clients error:', e); }
+        }
+
+        async function saveBusinessSettingsToSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            try {
+                await supabaseClient.from('business_settings').upsert({
+                    user_id: currentUser.id,
+                    data: businessSettings
+                }, { onConflict: 'user_id' });
+            } catch(e) { console.warn('Save settings error:', e); }
+        }
+
+        // ==================== SUPABASE SYNC ====================
         let dashChartInstance = null;
 
         function renderDashboard() {
@@ -11460,7 +11556,7 @@ Thanks,
                     date: estimates[index].date // Keep original date
                 };
                 
-                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+                localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
                 closeEstimateForm();
                 renderKanban();
                 
@@ -11484,7 +11580,7 @@ Thanks,
             };
             
             estimates.push(duplicate);
-            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             renderKanban();
             // renderEstimatesListView(); // Removed
             alert('Estimate duplicated successfully!');
@@ -11495,7 +11591,7 @@ Thanks,
             if (!confirm('Are you sure you want to delete this estimate?')) return;
             
             estimates = estimates.filter(e => e.id !== id);
-            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates));
+            localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             renderKanban();
             // renderEstimatesListView(); // Removed
         }
