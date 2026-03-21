@@ -11203,8 +11203,85 @@ Thanks,
             }
         }
 
+        // ==================== ONBOARDING ====================
+        let obSelectedType = '';
+
+        function showOnboarding(user) {
+            const modal = document.getElementById('onboardingModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const emailEl = document.getElementById('ob-email');
+            if (emailEl && user?.email) emailEl.value = user.email;
+        }
+
+        function obSelectType(btn, type) {
+            obSelectedType = type;
+            document.querySelectorAll('#ob-type-btns button').forEach(b => {
+                b.style.background = 'var(--color-bg)';
+                b.style.borderColor = 'var(--color-border)';
+                b.style.color = 'var(--color-fg)';
+            });
+            btn.style.background = 'rgba(16,185,129,0.15)';
+            btn.style.borderColor = '#10b981';
+            btn.style.color = '#10b981';
+        }
+
+        function obNext(step) {
+            if (step === 1) {
+                const name = document.getElementById('ob-business-name').value.trim();
+                if (!name) { document.getElementById('ob-business-name').style.borderColor = '#ef4444'; return; }
+                document.getElementById('ob-step-1').style.display = 'none';
+                document.getElementById('ob-step-2').style.display = 'block';
+                document.getElementById('ob-step-2-dot').style.background = '#10b981';
+            } else if (step === 2) {
+                const name  = document.getElementById('ob-business-name').value.trim();
+                const phone = document.getElementById('ob-phone').value.trim();
+                const email = document.getElementById('ob-email').value.trim();
+                const city  = document.getElementById('ob-city').value.trim();
+                document.getElementById('ob-summary').innerHTML = [
+                    `🏢 <strong>${name}</strong>`,
+                    obSelectedType ? `🔨 ${obSelectedType}` : '',
+                    phone ? `📞 ${phone}` : '',
+                    email ? `📧 ${email}` : '',
+                    city  ? `📍 ${city}`  : ''
+                ].filter(Boolean).join('<br>');
+                document.getElementById('ob-step-2').style.display = 'none';
+                document.getElementById('ob-step-3').style.display = 'block';
+                document.getElementById('ob-step-3-dot').style.background = '#10b981';
+            }
+        }
+
+        function obBack(step) {
+            if (step === 2) {
+                document.getElementById('ob-step-2').style.display = 'none';
+                document.getElementById('ob-step-1').style.display = 'block';
+                document.getElementById('ob-step-2-dot').style.background = 'var(--color-border)';
+            }
+        }
+
+        function finishOnboarding() {
+            const name  = document.getElementById('ob-business-name').value.trim();
+            const phone = document.getElementById('ob-phone').value.trim();
+            const email = document.getElementById('ob-email').value.trim();
+            const city  = document.getElementById('ob-city').value.trim();
+            const cityParts = city.split(',');
+            businessSettings = {
+                ...businessSettings, name, phone, email,
+                city: cityParts[0]?.trim() || '',
+                state: cityParts[1]?.trim() || '',
+                businessType: obSelectedType
+            };
+            localStorage.setItem('estimateflow_businessSettings', JSON.stringify(businessSettings));
+            saveBusinessSettingsToSupabase();
+            loadBusinessSettings();
+            updateAccountProfile(currentUser);
+            if (currentUser) localStorage.setItem('qe_onboarded_' + currentUser.id, '1');
+            document.getElementById('onboardingModal').style.display = 'none';
+            showSection('estimates');
+            setTimeout(() => showNewEstimate(), 400);
+        }
+
         // ==================== SUPABASE SYNC ====================
-        // Strategy: localStorage = fast local cache, Supabase = source of truth per user
 
         async function syncFromSupabase() {
             if (!supabaseClient || !currentUser) return;
