@@ -567,7 +567,7 @@
                                 </div>
                             </div>
                             <div class="flex gap-2 flex-wrap items-center">
-                                <a href="https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01" target="_blank" class="px-5 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-xs font-bold transition-colors animate-pulse">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01\')" class="px-5 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-xs font-bold transition-colors animate-pulse">
                                     🔒 Subscribe Now — $59/mo
                                 </a>
                             </div>
@@ -584,10 +584,10 @@
                                 </div>
                             </div>
                             <div class="flex gap-2 flex-wrap items-center">
-                                <a href="https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03" target="_blank" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03\')" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
                                     Starter $29
                                 </a>
-                                <a href="https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01" target="_blank" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-bold transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01\')" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-bold transition-colors">
                                     ⭐ Pro $59/mo
                                 </a>
                                 <button onclick="dismissTrialBanner()" class="text-muted-foreground hover:text-foreground text-xs px-2">✕</button>
@@ -614,13 +614,13 @@
                                 </div>
                             </div>
                             <div class="flex gap-2 flex-wrap items-center">
-                                <a href="https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03" target="_blank" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03\')" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
                                     Starter $29
                                 </a>
-                                <a href="https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01" target="_blank" class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-dark transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01\')" class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-dark transition-colors">
                                     ⭐ Pro $59/mo
                                 </a>
-                                <a href="https://buy.stripe.com/cNi3cx4Bv2PObJt06j1oI02" target="_blank" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/cNi3cx4Bv2PObJt06j1oI02\')" class="px-4 py-2 bg-background border border-border rounded-lg text-xs font-semibold hover:bg-card transition-colors">
                                     Team $99
                                 </a>
                                 <button onclick="dismissTrialBanner()" class="text-muted-foreground hover:text-foreground text-xs px-2">✕</button>
@@ -638,13 +638,13 @@
                                 </div>
                             </div>
                             <div class="flex gap-2 flex-wrap">
-                                <a href="https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03" target="_blank" class="px-4 py-2 bg-background border border-red-500/30 rounded-lg text-xs font-semibold hover:bg-card transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03\')" class="px-4 py-2 bg-background border border-red-500/30 rounded-lg text-xs font-semibold hover:bg-card transition-colors">
                                     Starter $29/mo
                                 </a>
-                                <a href="https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01" target="_blank" class="px-5 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-bold transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/8x2eVf2tnfCA4h1g5h1oI01\')" class="px-5 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-bold transition-colors">
                                     ⭐ Subscribe — Pro $59/mo
                                 </a>
-                                <a href="https://buy.stripe.com/cNi3cx4Bv2PObJt06j1oI02" target="_blank" class="px-4 py-2 bg-background border border-red-500/30 rounded-lg text-xs font-semibold hover:bg-card transition-colors">
+                                <a href="#" onclick="openStripeLink(\'https://buy.stripe.com/cNi3cx4Bv2PObJt06j1oI02\')" class="px-4 py-2 bg-background border border-red-500/30 rounded-lg text-xs font-semibold hover:bg-card transition-colors">
                                     Team $99/mo
                                 </a>
                             </div>
@@ -11228,7 +11228,15 @@ Thanks,
             }
         }
 
-        // ==================== ONBOARDING ====================
+        // ==================== STRIPE ====================
+        function openStripeLink(baseUrl) {
+            const email = currentUser?.email || businessSettings?.email || '';
+            const url = email
+                ? `${baseUrl}?prefilled_email=${encodeURIComponent(email)}`
+                : baseUrl;
+            window.open(url, '_blank');
+        }
+        // ==================== STRIPE ====================
         let obSelectedType = '';
 
         function showOnboarding(user) {
