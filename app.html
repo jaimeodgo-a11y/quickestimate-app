@@ -4387,12 +4387,17 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
                             <div class="text-lg font-medium">$${calculatedTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                             <div class="text-xs text-green-600 dark:text-green-400">+$${markupAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         </div>
-                        <button onclick="deleteLineItem(${item.id})" class="p-2 text-muted-foreground hover:text-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openItemCalc(${item.id}, '${item.unit}')" title="Smart Calculator" class="p-2 text-muted-foreground hover:text-primary transition-colors" style="border-radius:6px">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+                            </button>
+                            <button onclick="deleteLineItem(${item.id})" class="p-2 text-muted-foreground hover:text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(row);
@@ -11228,6 +11233,88 @@ Thanks,
             }
         }
 
+        // ==================== SMART ITEM CALCULATOR ====================
+        let itemCalcTargetId = null;
+
+        function openItemCalc(itemId, unit) {
+            itemCalcTargetId = itemId;
+            document.getElementById('itemCalcModal').style.display = 'flex';
+            document.getElementById('itemCalcSubtitle').textContent = '→ updates QTY for this item';
+            if (unit === 'sqft') switchCalcTab('sf');
+            else if (unit === 'each') switchCalcTab('pl');
+            else switchCalcTab('sf');
+        }
+
+        function closeItemCalc() {
+            document.getElementById('itemCalcModal').style.display = 'none';
+            itemCalcTargetId = null;
+        }
+
+        function switchCalcTab(tab) {
+            ['sf','cy','pl'].forEach(t => {
+                document.getElementById(`calcTab-${t}`).style.display = t === tab ? 'block' : 'none';
+                const btn = document.getElementById(`tab-${t}`);
+                btn.style.color = t === tab ? '#10b981' : 'var(--color-muted-fg)';
+                btn.style.borderBottom = t === tab ? '2px solid #10b981' : '2px solid transparent';
+                btn.style.fontWeight = t === tab ? '700' : '600';
+            });
+        }
+
+        function calcSF() {
+            const l = parseFloat(document.getElementById('sf-length').value) || 0;
+            const w = parseFloat(document.getElementById('sf-width').value) || 0;
+            document.getElementById('sf-result').textContent = (l * w).toFixed(2) + ' SF';
+        }
+
+        function calcCY() {
+            const l = parseFloat(document.getElementById('cy-length').value) || 0;
+            const w = parseFloat(document.getElementById('cy-width').value) || 0;
+            const d = parseFloat(document.getElementById('cy-depth').value) || 0;
+            const cy = (l * w * (d / 12)) / 27;
+            document.getElementById('cy-result').textContent = cy.toFixed(2) + ' CY';
+            document.getElementById('cy-result-sf').textContent = (l*w).toFixed(1) + ' SF area · ' + d + '" deep';
+        }
+
+        function calcPL() {
+            const sf = parseFloat(document.getElementById('pl-sf').value) || 0;
+            const cov = parseFloat(document.getElementById('pl-coverage').value) || 100;
+            const waste = document.getElementById('pl-waste').checked;
+            const totalSF = waste ? sf * 1.10 : sf;
+            const pallets = Math.ceil(totalSF / cov);
+            document.getElementById('pl-result').textContent = pallets + ' pallet' + (pallets !== 1 ? 's' : '');
+            document.getElementById('pl-result-detail').textContent = totalSF.toFixed(1) + ' SF ÷ ' + cov + ' SF/pallet' + (waste ? ' (+10% waste)' : '');
+        }
+
+        function applyCalcResult(tab) {
+            if (!itemCalcTargetId) return;
+            let value = 0;
+            if (tab === 'sf') {
+                const l = parseFloat(document.getElementById('sf-length').value) || 0;
+                const w = parseFloat(document.getElementById('sf-width').value) || 0;
+                value = parseFloat((l * w).toFixed(2));
+            } else if (tab === 'cy') {
+                const l = parseFloat(document.getElementById('cy-length').value) || 0;
+                const w = parseFloat(document.getElementById('cy-width').value) || 0;
+                const d = parseFloat(document.getElementById('cy-depth').value) || 0;
+                value = parseFloat(((l * w * (d / 12)) / 27).toFixed(2));
+            } else if (tab === 'pl') {
+                const sf = parseFloat(document.getElementById('pl-sf').value) || 0;
+                const cov = parseFloat(document.getElementById('pl-coverage').value) || 100;
+                const waste = document.getElementById('pl-waste').checked;
+                value = Math.ceil((waste ? sf * 1.10 : sf) / cov);
+            }
+            if (value > 0) {
+                setLineQty(itemCalcTargetId, value);
+                closeItemCalc();
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(16,185,129,.4)';
+                toast.textContent = '✅ QTY updated to ' + value;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }
+        }
+        // ==================== SMART ITEM CALCULATOR ====================
+
         // ==================== STRIPE ====================
         function openStripeLink(baseUrl) {
             const email = currentUser?.email || businessSettings?.email || '';
@@ -12567,6 +12654,93 @@ Thanks,
             <button onclick="finishOnboarding()" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer">
                 ⚡ Create My First Estimate →
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- SMART ITEM CALCULATOR MODAL -->
+<div id="itemCalcModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeItemCalc()">
+    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#10b981,#059669);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:1rem;font-weight:800;color:#fff">🧮 Smart Calculator</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.8)" id="itemCalcSubtitle">Calculate quantity</div>
+            </div>
+            <button onclick="closeItemCalc()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid var(--color-border)">
+            <button onclick="switchCalcTab('sf')" id="tab-sf" style="flex:1;padding:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:var(--color-card);color:#10b981;border-bottom:2px solid #10b981">📐 Square Feet</button>
+            <button onclick="switchCalcTab('cy')" id="tab-cy" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--color-card);color:var(--color-muted-fg);border-bottom:2px solid transparent">🪣 Cubic Yards</button>
+            <button onclick="switchCalcTab('pl')" id="tab-pl" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--color-card);color:var(--color-muted-fg);border-bottom:2px solid transparent">📦 Pallets</button>
+        </div>
+
+        <!-- SF Calculator -->
+        <div id="calcTab-sf" style="padding:20px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div>
+                    <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Length (ft)</label>
+                    <input type="number" id="sf-length" placeholder="0" oninput="calcSF()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 12px;font-size:1rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Width (ft)</label>
+                    <input type="number" id="sf-width" placeholder="0" oninput="calcSF()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 12px;font-size:1rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                </div>
+            </div>
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px">
+                <div style="font-size:0.75rem;color:#10b981;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Result</div>
+                <div id="sf-result" style="font-size:2rem;font-weight:800;color:#10b981">0 SF</div>
+            </div>
+            <button onclick="applyCalcResult('sf')" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:700;cursor:pointer">✅ Apply to QTY</button>
+        </div>
+
+        <!-- Cubic Yards Calculator -->
+        <div id="calcTab-cy" style="display:none;padding:20px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                <div>
+                    <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Length (ft)</label>
+                    <input type="number" id="cy-length" placeholder="0" oninput="calcCY()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 8px;font-size:0.95rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Width (ft)</label>
+                    <input type="number" id="cy-width" placeholder="0" oninput="calcCY()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 8px;font-size:0.95rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Depth (in)</label>
+                    <input type="number" id="cy-depth" placeholder="4" value="4" oninput="calcCY()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 8px;font-size:0.95rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+                </div>
+            </div>
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px">
+                <div style="font-size:0.75rem;color:#10b981;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Result</div>
+                <div id="cy-result" style="font-size:2rem;font-weight:800;color:#10b981">0 CY</div>
+                <div id="cy-result-sf" style="font-size:0.75rem;color:var(--color-muted-fg);margin-top:4px"></div>
+            </div>
+            <button onclick="applyCalcResult('cy')" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:700;cursor:pointer">✅ Apply to QTY</button>
+        </div>
+
+        <!-- Pallets Calculator -->
+        <div id="calcTab-pl" style="display:none;padding:20px">
+            <div style="margin-bottom:12px">
+                <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Total Square Feet</label>
+                <input type="number" id="pl-sf" placeholder="0" oninput="calcPL()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 12px;font-size:1rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+            </div>
+            <div style="margin-bottom:12px">
+                <label style="font-size:11px;color:var(--color-muted-fg);font-weight:600;text-transform:uppercase;letter-spacing:.5px">SF per Pallet</label>
+                <input type="number" id="pl-coverage" placeholder="100" value="100" oninput="calcPL()" style="width:100%;background:var(--color-bg);border:2px solid var(--color-border);border-radius:8px;padding:10px 12px;font-size:1rem;font-weight:700;color:var(--color-fg);outline:none;box-sizing:border-box;margin-top:4px" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--color-border)'">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="pl-waste" onchange="calcPL()" style="accent-color:#10b981"> Add 10% waste
+                </label>
+            </div>
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px">
+                <div style="font-size:0.75rem;color:#10b981;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Pallets Needed</div>
+                <div id="pl-result" style="font-size:2rem;font-weight:800;color:#10b981">0 pallets</div>
+                <div id="pl-result-detail" style="font-size:0.75rem;color:var(--color-muted-fg);margin-top:4px"></div>
+            </div>
+            <button onclick="applyCalcResult('pl')" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:700;cursor:pointer">✅ Apply to QTY</button>
         </div>
     </div>
 </div>
