@@ -11173,7 +11173,9 @@ Thanks,
                         onLoginSuccess(session.user);
                         return;
                     }
+                    // No session — show login screen on Sign In tab
                     document.getElementById('authScreen').classList.remove('hidden');
+                    switchAuthTab('login');
 
                     supabaseClient.auth.onAuthStateChange((event, session) => {
                         if (event === 'PASSWORD_RECOVERY') {
@@ -11183,6 +11185,7 @@ Thanks,
                         if (session?.user) onLoginSuccess(session.user);
                         else if (event === 'SIGNED_OUT') {
                             document.getElementById('authScreen').classList.remove('hidden');
+                            switchAuthTab('login');
                         }
                     });
                     return;
