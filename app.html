@@ -461,6 +461,7 @@
                 <svg id="theme-icon-light" class="hidden dark:block" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2m-7.07-14.07 1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2m-4.93-7.07-1.41 1.41M6.34 17.66l-1.41 1.41"></path></svg>
                 <svg id="theme-icon-dark" class="block dark:hidden" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
             </button>
+            <div id="navTrialBadge" style="display:none"></div>
             <div id="navUserMenu"></div>
         </div>
     </nav>
@@ -6854,6 +6855,10 @@ Thanks,
         function renderTrialBanner() {
             const daysLeft = getTrialDaysLeft();
             const banner = document.getElementById('trialBanner');
+
+            // Update nav badge — always visible
+            updateNavTrialBadge(daysLeft);
+
             if (!banner) return;
 
             // Check if dismissed today (but always show if expired or ≤3 days)
@@ -6861,10 +6866,9 @@ Thanks,
             const today = new Date().toDateString();
             if (dismissed === today && daysLeft > 3) {
                 banner.style.display = 'none';
-                return;
+            } else {
+                banner.style.display = 'block';
             }
-
-            banner.style.display = 'block';
 
             // Hide all states
             ['trialNormal','trialWarning','trialUrgent','trialExpired'].forEach(id => {
@@ -6873,10 +6877,8 @@ Thanks,
             });
 
             if (daysLeft === 0) {
-                // Expired
                 document.getElementById('trialExpired')?.classList.remove('hidden');
             } else if (daysLeft <= 3) {
-                // Urgent
                 const el = document.getElementById('trialUrgent');
                 if (el) {
                     el.classList.remove('hidden');
@@ -6884,24 +6886,51 @@ Thanks,
                     document.getElementById('trialDaysUrgentS').textContent = daysLeft === 1 ? '' : 's';
                 }
             } else if (daysLeft <= 7) {
-                // Warning
                 const el = document.getElementById('trialWarning');
                 if (el) {
                     el.classList.remove('hidden');
                     document.getElementById('trialDaysWarning').textContent = daysLeft;
                 }
             } else {
-                // Normal
                 const el = document.getElementById('trialNormal');
                 if (el) {
                     el.classList.remove('hidden');
                     document.getElementById('trialDaysNormal').textContent = daysLeft;
-                    // Progress bar — goes from 100% to 0%
                     const pct = Math.round((daysLeft / TRIAL_DAYS) * 100);
                     const bar = document.getElementById('trialProgressBar');
                     if (bar) bar.style.width = pct + '%';
                 }
             }
+        }
+
+        function updateNavTrialBadge(daysLeft) {
+            const badge = document.getElementById('navTrialBadge');
+            if (!badge) return;
+
+            // Hide if active subscriber
+            if (localStorage.getItem('qe_active_sub')) {
+                badge.style.display = 'none';
+                return;
+            }
+
+            let color, text;
+            if (daysLeft === 0) {
+                color = '#ef4444'; text = '🔒 Expired — $29/mo';
+            } else if (daysLeft <= 3) {
+                color = '#ef4444'; text = `⚠️ ${daysLeft}d left — $29/mo`;
+            } else if (daysLeft <= 7) {
+                color = '#eab308'; text = `⏳ ${daysLeft} days left`;
+            } else {
+                color = '#10b981'; text = `Trial — ${daysLeft}d`;
+            }
+
+            badge.style.display = 'flex';
+            badge.innerHTML = `
+                <a href="#" onclick="openStripeLink('https://buy.stripe.com/bJe9AVc3X4XWfZJ06j1oI03')"
+                    style="display:flex;align-items:center;gap:6px;background:${color}20;border:1px solid ${color}50;color:${color};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;transition:all .2s"
+                    onmouseover="this.style.background='${color}35'" onmouseout="this.style.background='${color}20'">
+                    ${text}
+                </a>`;
         }
 
         function descCmd(cmd) {
