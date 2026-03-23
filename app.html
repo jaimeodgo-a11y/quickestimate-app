@@ -6276,25 +6276,76 @@ function acceptEstimate() {
 
 async function sendByEmail() {
     const btn = document.querySelector('.btn[onclick="sendByEmail()"]');
-    // Use client email from estimate, fallback to prompt
     const clientEmail = '${est.clientEmail || ""}' || prompt('Enter client email address:');
     if (!clientEmail) return;
 
     const grand = document.getElementById('grand-total').textContent;
-    const subject = 'Your Estimate is Ready — ${est.projectName}';
-    const bodyText = 'Hi ${est.clientName||"there"},\\n\\nYour estimate for ${est.projectName} is ready.\\n\\nEstimate #: ${docNum}\\nTotal: ' + grand + '\\n\\nPlease review and sign at the link below.\\n\\nThank you,\\n${bizName}\\n${bizContact}';
 
-    const htmlBody = '<div style="font-family:sans-serif;max-width:580px;margin:0 auto;padding:24px">' +
-        '<h2 style="color:#10b981">Your Estimate is Ready</h2>' +
-        '<p>Hi ${est.clientName||"there"},</p>' +
-        '<p>Your estimate for <strong>${est.projectName}</strong> is ready to review.</p>' +
-        '<table style="width:100%;border-collapse:collapse;margin:16px 0">' +
-        '<tr><td style="padding:8px;border-bottom:1px solid #eee">Estimate #</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold">${docNum}</td></tr>' +
-        '<tr><td style="padding:8px">Total</td><td style="padding:8px;font-weight:bold;color:#10b981;font-size:1.2rem">' + grand + '</td></tr>' +
-        '</table>' +
-        '<p style="color:#666;font-size:0.9rem">Please review all services and sign to accept.</p>' +
-        '<hr style="border:none;border-top:1px solid #eee;margin:20px 0">' +
-        '<p style="font-size:0.75rem;color:#999">${bizName} · ${bizContact}</p>' +
+    // Build line items table rows
+    const lineItemsRows = ${JSON.stringify((est.lineItems||[]).filter(i=>i.qty>0).map(i=>({
+        name: i.name,
+        qty: i.qty,
+        unit: i.unit,
+        rate: i.rate,
+        total: (parseFloat(i.rate)||0) * (parseFloat(i.qty)||0)
+    })))}.map(i =>
+        '<tr style="border-bottom:1px solid #2a2a2a">' +
+        '<td style="padding:10px 8px;color:#f0f0f0">' + i.name + '</td>' +
+        '<td style="padding:10px 8px;color:#888;text-align:center">' + i.qty + ' ' + i.unit + '</td>' +
+        '<td style="padding:10px 8px;color:#f0f0f0;text-align:right">$' + i.total.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+        '</tr>'
+    ).join('');
+
+    // Service description (strip HTML tags for cleaner display)
+    const serviceDesc = '${(est.serviceDescription||"").replace(/<[^>]*>/g,"").trim()}';
+
+    // Approval link — links back to this same page
+    const approvalLink = window.location.href;
+
+    const htmlBody =
+        '<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">' +
+
+        // Header
+        '<div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px 32px">' +
+        '<div style="font-size:13px;color:rgba(255,255,255,0.8);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${isInvoice ? "Invoice" : "Estimate"} · ${docNum}</div>' +
+        '<h1 style="color:#fff;font-size:22px;font-weight:800;margin:0 0 4px">${est.projectName}</h1>' +
+        '<div style="color:rgba(255,255,255,0.85);font-size:14px">From ${bizName}</div>' +
+        '</div>' +
+
+        // Greeting
+        '<div style="padding:28px 32px 0">' +
+        '<p style="font-size:15px;line-height:1.6">Hi <strong>${est.clientName || "there"}</strong>,</p>' +
+        '<p style="color:#ccc;font-size:14px;line-height:1.6">Your ${isInvoice ? "invoice" : "estimate"} is ready to review. Please click the button below to view the details, make any service selections, and sign to approve.</p>' +
+        '</div>' +
+
+        // Description
+        (serviceDesc ? '<div style="padding:0 32px"><div style="background:#161616;border-radius:10px;padding:16px;margin:16px 0;font-size:14px;color:#ccc;line-height:1.6;border-left:3px solid #10b981">' + serviceDesc + '</div></div>' : '') +
+
+        // Line items
+        (lineItemsRows ? '<div style="padding:0 32px"><table style="width:100%;border-collapse:collapse;margin:16px 0">' +
+        '<thead><tr style="border-bottom:1px solid #333"><th style="padding:8px;text-align:left;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Item</th><th style="padding:8px;text-align:center;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Qty</th><th style="padding:8px;text-align:right;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Total</th></tr></thead>' +
+        '<tbody>' + lineItemsRows + '</tbody>' +
+        '</table></div>' : '') +
+
+        // Total
+        '<div style="padding:0 32px">' +
+        '<div style="background:#161616;border-radius:12px;padding:20px;margin:8px 0;display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-size:1rem;color:#888">Total</span>' +
+        '<span style="font-size:1.6rem;font-weight:800;color:#10b981">' + grand + '</span>' +
+        '</div></div>' +
+
+        // CTA Button
+        '<div style="padding:24px 32px;text-align:center">' +
+        '<a href="' + approvalLink + '" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:800;font-size:16px;box-shadow:0 4px 16px rgba(16,185,129,0.3)">👀 View & Approve ${isInvoice ? "Invoice" : "Estimate"} →</a>' +
+        '<p style="font-size:12px;color:#555;margin-top:12px">Click the button to review all details and sign digitally</p>' +
+        '</div>' +
+
+        // Footer
+        '<div style="padding:16px 32px 24px;border-top:1px solid rgba(255,255,255,0.06)">' +
+        '<p style="font-size:12px;color:#555;margin:0">${bizName}' +
+        '${biz && biz.phone ? " · " + biz.phone : ""}' +
+        '${biz && biz.email ? " · " + biz.email : ""}' +
+        '</p></div>' +
         '</div>';
 
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
@@ -6305,20 +6356,22 @@ async function sendByEmail() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 to: clientEmail,
-                subject: subject,
+                subject: '${isInvoice ? "Invoice" : "Estimate"} Ready: ${est.projectName} — ' + grand,
                 html: htmlBody,
                 from_name: '${bizName || "QuickEstimate"}',
-                reply_to: '${biz.email || ""}'
+                reply_to: '${biz && biz.email ? biz.email : ""}'
             })
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Send failed');
 
-        if (btn) { btn.innerHTML = '✅ Sent to ${est.clientEmail || clientEmail}!'; btn.style.background = '#16a34a'; }
+        if (btn) { btn.innerHTML = '✅ Sent!'; btn.style.background = '#16a34a'; }
         setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = '✉ Send'; btn.style.background = '#7c3aed'; } }, 3000);
     } catch(err) {
         if (btn) { btn.disabled = false; btn.innerHTML = '✉ Send'; }
-        window.location.href = 'mailto:' + clientEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(bodyText);
+        const subject = encodeURIComponent('Your Estimate: ${est.projectName}');
+        const body = encodeURIComponent('Hi ${est.clientName||"there"},\\n\\nYour estimate is ready: ' + approvalLink);
+        window.location.href = 'mailto:' + clientEmail + '?subject=' + subject + '&body=' + body;
     }
 }
 
