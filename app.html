@@ -284,7 +284,7 @@
         <div id="authSuccess" class="auth-success"></div>
 
         <!-- LOGIN FORM -->
-        <div id="loginForm">
+        <div id="loginForm" style="display:block">
             <div class="auth-field">
                 <label>Email</label>
                 <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
@@ -11156,9 +11156,17 @@ Thanks,
             }
             // Sync user data from Supabase
             syncFromSupabase().then(() => {
-                const isNew = !localStorage.getItem('qe_onboarded_' + user.id);
-                if (isNew && !businessSettings?.name) {
-                    showOnboarding(user);
+                const onboardedKey = 'qe_onboarded_' + user.id;
+                // Only show onboarding if truly new user with no business name
+                if (!localStorage.getItem(onboardedKey)) {
+                    setTimeout(() => {
+                        if (!businessSettings?.name) {
+                            showOnboarding(user);
+                        } else {
+                            // Has business settings — mark as onboarded
+                            localStorage.setItem(onboardedKey, '1');
+                        }
+                    }, 1500);
                 }
             });
         }
@@ -11662,6 +11670,7 @@ Thanks,
             // Show auth screen immediately if Supabase is configured
             if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
                 document.getElementById('authScreen').classList.remove('hidden');
+                switchAuthTab('login');
             }
 
             loadData();
@@ -12692,7 +12701,14 @@ Thanks,
             <div style="margin-top:8px">
                 <label style="font-size:0.8rem;color:var(--color-muted-fg);display:block;margin-bottom:6px">What type of contractor?</label>
                 <div style="display:flex;flex-wrap:wrap;gap:6px" id="ob-type-btns">
-                    ${['🧱 Pavers','🏗️ Concrete','🎨 Painting','🪵 Carpentry','🏠 Flooring','🔧 General','💧 Plumbing','⚡ Electrical'].map(t=>`<button onclick="obSelectType(this,'${t}')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">${t}</button>`).join('')}
+                    <button onclick="obSelectType(this,'🧱 Pavers')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🧱 Pavers</button>
+                    <button onclick="obSelectType(this,'🏗️ Concrete')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🏗️ Concrete</button>
+                    <button onclick="obSelectType(this,'🎨 Painting')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🎨 Painting</button>
+                    <button onclick="obSelectType(this,'🪵 Carpentry')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🪵 Carpentry</button>
+                    <button onclick="obSelectType(this,'🏠 Flooring')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🏠 Flooring</button>
+                    <button onclick="obSelectType(this,'🔧 General')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">🔧 General</button>
+                    <button onclick="obSelectType(this,'💧 Plumbing')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">💧 Plumbing</button>
+                    <button onclick="obSelectType(this,'⚡ Electrical')" style="padding:6px 12px;border-radius:20px;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-fg);font-size:0.75rem;cursor:pointer;transition:all .15s">⚡ Electrical</button>
                 </div>
             </div>
             <button onclick="obNext(1)" style="width:100%;margin-top:20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer">
