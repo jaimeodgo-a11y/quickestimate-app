@@ -11350,17 +11350,29 @@ Thanks,
             // Sync user data from Supabase
             syncFromSupabase().then(() => {
                 const onboardedKey = 'qe_onboarded_' + user.id;
-                // Only show onboarding if truly new user with no business name
-                if (!localStorage.getItem(onboardedKey)) {
-                    setTimeout(() => {
-                        if (!businessSettings?.name) {
-                            showOnboarding(user);
-                        } else {
-                            // Has business settings — mark as onboarded
-                            localStorage.setItem(onboardedKey, '1');
-                        }
-                    }, 1500);
+                const onboardedKeyEmail = 'qe_onboarded_' + (user.email || '');
+                // If already marked as onboarded (by ID or email), never show it again
+                if (localStorage.getItem(onboardedKey) || localStorage.getItem(onboardedKeyEmail)) return;
+                // If businessSettings already has a name (from localStorage or Supabase sync), mark onboarded
+                if (businessSettings?.name) {
+                    localStorage.setItem(onboardedKey, '1');
+                    localStorage.setItem(onboardedKeyEmail, '1');
+                    return;
                 }
+                // Also check raw localStorage in case businessSettings object wasn't updated yet
+                try {
+                    const saved = localStorage.getItem('estimateflow_businessSettings');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed?.name) {
+                            localStorage.setItem(onboardedKey, '1');
+                            localStorage.setItem(onboardedKeyEmail, '1');
+                            return;
+                        }
+                    }
+                } catch(e) {}
+                // Truly new user with no business info — show onboarding
+                showOnboarding(user);
             });
         }
 
@@ -11826,7 +11838,10 @@ Thanks,
             saveBusinessSettingsToSupabase();
             loadBusinessSettings();
             updateAccountProfile(currentUser);
-            if (currentUser) localStorage.setItem('qe_onboarded_' + currentUser.id, '1');
+            if (currentUser) {
+                localStorage.setItem('qe_onboarded_' + currentUser.id, '1');
+                localStorage.setItem('qe_onboarded_' + (currentUser.email || ''), '1');
+            }
             document.getElementById('onboardingModal').style.display = 'none';
             showSection('estimates');
             setTimeout(() => showNewEstimate(), 400);
