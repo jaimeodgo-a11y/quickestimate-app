@@ -5149,31 +5149,132 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
         function convertToInvoice(id) {
             const estimate = estimates.find(e => e.id === id);
             if (!estimate) return;
-            
+
             if (estimate.type === 'invoice') {
-                alert('This is already an invoice!');
+                showToast('This is already an invoice!', 'warning');
                 return;
             }
-            
+
             // Generate invoice number
             const invoiceCount = estimates.filter(e => e.type === 'invoice').length;
             const invoiceNumber = 'INV-' + String(invoiceCount + 1).padStart(4, '0');
-            
+
             // Set invoice fields
             estimate.type = 'invoice';
             estimate.invoiceNumber = invoiceNumber;
             estimate.invoiceDate = new Date().toISOString().split('T')[0];
-            estimate.status = 'approved'; // Invoices are automatically approved
-            
-            // Set due date (30 days from now by default)
+            estimate.status = 'approved';
+
+            // Due date 30 days from now
             const dueDate = new Date();
             dueDate.setDate(dueDate.getDate() + 30);
             estimate.dueDate = dueDate.toISOString().split('T')[0];
-            
+
             localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
             renderKanban();
-            
-            alert(`Converted to Invoice ${invoiceNumber}!`);
+
+            // Show success modal
+            showInvoiceCreatedModal(estimate, invoiceNumber);
+        }
+
+        function showInvoiceCreatedModal(estimate, invoiceNumber) {
+            const total = (estimate.totalPrice || estimate.total || 0).toLocaleString('en-US', {style:'currency', currency:'USD'});
+            const dueDate = new Date(estimate.dueDate).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+
+            const modal = document.createElement('div');
+            modal.id = 'invoiceCreatedModal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px';
+            modal.innerHTML = `
+                <div style="background:var(--color-card);border:1px solid rgba(16,185,129,0.3);border-radius:20px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+                    <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af);padding:28px 28px 24px;text-align:center">
+                        <div style="font-size:2.5rem;margin-bottom:8px">🧾</div>
+                        <h2 style="color:#fff;font-size:1.3rem;font-weight:800;margin:0 0 4px">Invoice Created!</h2>
+                        <div style="color:rgba(255,255,255,0.8);font-size:0.85rem">${invoiceNumber} · Due ${dueDate}</div>
+                    </div>
+                    <div style="padding:24px">
+                        <div style="background:var(--color-bg);border-radius:12px;padding:16px;margin-bottom:20px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <span style="font-size:0.85rem;color:var(--color-muted-fg)">Project</span>
+                                <span style="font-size:0.9rem;font-weight:600">${estimate.projectName || 'Untitled'}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <span style="font-size:0.85rem;color:var(--color-muted-fg)">Client</span>
+                                <span style="font-size:0.9rem;font-weight:600">${estimate.clientName || '—'}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--color-border);padding-top:10px;margin-top:4px">
+                                <span style="font-size:0.85rem;color:var(--color-muted-fg)">Total Due</span>
+                                <span style="font-size:1.2rem;font-weight:800;color:#10b981">${total}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:10px">
+                            <button onclick="sendInvoiceEmail(${estimate.id});document.getElementById('invoiceCreatedModal').remove()" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer">
+                                ✉️ Send Invoice to Client
+                            </button>
+                            <button onclick="openEstimateView(${estimate.id});document.getElementById('invoiceCreatedModal').remove()" style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);color:var(--color-fg);border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer">
+                                👁️ Preview Invoice
+                            </button>
+                            <button onclick="document.getElementById('invoiceCreatedModal').remove()" style="width:100%;background:none;border:none;color:var(--color-muted-fg);font-size:0.85rem;cursor:pointer;padding:6px">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        }
+
+        async function sendInvoiceEmail(id) {
+            const estimate = estimates.find(e => e.id === id);
+            if (!estimate) return;
+            const clientEmail = estimate.clientEmail || prompt('Enter client email:');
+            if (!clientEmail) return;
+
+            const total = (estimate.totalPrice || estimate.total || 0).toLocaleString('en-US', {style:'currency', currency:'USD'});
+            const dueDate = estimate.dueDate ? new Date(estimate.dueDate).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) : '30 days';
+            const biz = businessSettings?.name || 'QuickEstimate';
+
+            try {
+                const res = await fetch('https://quickestimate.app/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: clientEmail,
+                        subject: `Invoice ${estimate.invoiceNumber} from ${biz} — ${total} due ${dueDate}`,
+                        from_name: biz,
+                        reply_to: businessSettings?.email || '',
+                        html: `<div style="font-family:sans-serif;max-width:580px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+                            <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af);padding:28px;text-align:center">
+                                <div style="font-size:2rem;margin-bottom:8px">🧾</div>
+                                <h1 style="color:#fff;font-size:1.4rem;font-weight:800;margin:0">${estimate.invoiceNumber}</h1>
+                                <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:0.9rem">From ${biz}</p>
+                            </div>
+                            <div style="padding:28px">
+                                <p style="font-size:15px">Hi ${estimate.clientName || 'there'},</p>
+                                <p style="color:#ccc">Please find your invoice below. Payment is due by <strong style="color:#fff">${dueDate}</strong>.</p>
+                                <div style="background:#161616;border-radius:12px;padding:20px;margin:20px 0">
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                                        <span style="color:#888">Project</span><span style="font-weight:600">${estimate.projectName || '—'}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                                        <span style="color:#888">Invoice #</span><span style="font-weight:600">${estimate.invoiceNumber}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;padding:12px 0 0">
+                                        <span style="color:#888;font-size:1rem">Total Due</span>
+                                        <span style="font-size:1.4rem;font-weight:800;color:#10b981">${total}</span>
+                                    </div>
+                                </div>
+                                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:20px 0">
+                                <p style="font-size:12px;color:#555">${biz} · ${businessSettings?.phone || ''} · ${businessSettings?.email || ''}</p>
+                            </div>
+                        </div>`
+                    })
+                });
+                const data = await res.json();
+                if (data.success) showToast('✅ Invoice sent to ' + clientEmail, 'success');
+                else showToast('❌ Failed to send invoice', 'error');
+            } catch(e) {
+                showToast('❌ Error sending invoice', 'error');
+            }
         }
         
         function markAsPaid(id) {
@@ -11419,6 +11520,15 @@ Thanks,
             }
         }
         // ==================== SMART ITEM CALCULATOR ====================
+
+        function showToast(msg, type = 'success') {
+            const colors = { success: '#10b981', error: '#ef4444', warning: '#eab308' };
+            const toast = document.createElement('div');
+            toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${colors[type]||colors.success};color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:nowrap`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
 
         // ==================== STRIPE ====================
         function openStripeLink(baseUrl) {
