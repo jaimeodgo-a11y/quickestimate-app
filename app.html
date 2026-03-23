@@ -3913,6 +3913,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
         }
 
         function showNewEstimate() {
+            window.currentEditingId = null; // Make sure we're not in edit mode
             document.getElementById('estimateForm').classList.remove('hidden');
             currentLineItems = [];
             populateTemplateSelector();
@@ -4647,7 +4648,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             }
 
             // Calculate all values
-            const baseCost = currentLineItems.reduce((sum, item) => sum + item.total, 0);
+            const baseCost = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
             const markup = baseCost * (grossMargin / 100);
             const subtotal = baseCost + markup;
             const taxes = subtotal * (estimateTaxRate / 100);
