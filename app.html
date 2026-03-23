@@ -11375,29 +11375,36 @@ Thanks,
             }
             // Sync user data from Supabase
             syncFromSupabase().then(() => {
-                const onboardedKey = 'qe_onboarded_' + user.id;
+                const onboardedKey      = 'qe_onboarded_' + user.id;
                 const onboardedKeyEmail = 'qe_onboarded_' + (user.email || '');
-                // If already marked as onboarded (by ID or email), never show it again
-                if (localStorage.getItem(onboardedKey) || localStorage.getItem(onboardedKeyEmail)) return;
-                // If businessSettings already has a name (from localStorage or Supabase sync), mark onboarded
-                if (businessSettings?.name) {
+
+                const markOnboarded = () => {
                     localStorage.setItem(onboardedKey, '1');
                     localStorage.setItem(onboardedKeyEmail, '1');
-                    return;
-                }
-                // Also check raw localStorage in case businessSettings object wasn't updated yet
+                };
+
+                // Already flagged as onboarded → skip
+                if (localStorage.getItem(onboardedKey) || localStorage.getItem(onboardedKeyEmail)) return;
+
+                // Has business name → not a new user
+                if (businessSettings?.name) { markOnboarded(); return; }
+
+                // Check raw localStorage for business name
                 try {
                     const saved = localStorage.getItem('estimateflow_businessSettings');
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        if (parsed?.name) {
-                            localStorage.setItem(onboardedKey, '1');
-                            localStorage.setItem(onboardedKeyEmail, '1');
-                            return;
-                        }
-                    }
+                    if (saved && JSON.parse(saved)?.name) { markOnboarded(); return; }
                 } catch(e) {}
-                // Truly new user with no business info — show onboarding
+
+                // Has existing estimates → definitely not a new user
+                if (estimates && estimates.length > 0) { markOnboarded(); return; }
+
+                // Check raw localStorage for estimates
+                try {
+                    const savedEst = localStorage.getItem('estimateflow_estimates');
+                    if (savedEst && JSON.parse(savedEst)?.length > 0) { markOnboarded(); return; }
+                } catch(e) {}
+
+                // Truly new user — show onboarding
                 showOnboarding(user);
             });
         }
@@ -11903,11 +11910,18 @@ Thanks,
                     localStorage.setItem('estimateflow_clients', JSON.stringify(clients)); saveClientsToSupabase();
                 }
                 // Load business settings
-                const { data: settingsRow } = await supabaseClient.from('business_settings').select('data').eq('user_id', currentUser.id).single();
-                if (settingsRow?.data) {
-                    businessSettings = settingsRow.data;
-                    localStorage.setItem('estimateflow_businessSettings', JSON.stringify(businessSettings));
-                    loadBusinessSettings();
+                try {
+                    const { data: settingsRow } = await supabaseClient.from('business_settings').select('data').eq('user_id', currentUser.id).single();
+                    if (settingsRow?.data) {
+                        businessSettings = settingsRow.data;
+                        localStorage.setItem('estimateflow_businessSettings', JSON.stringify(businessSettings));
+                        loadBusinessSettings();
+                    }
+                } catch(settingsErr) {
+                    // business_settings table may not exist yet — fall back to localStorage
+                    console.warn('business_settings load error (table may not exist yet):', settingsErr);
+                    const local = localStorage.getItem('estimateflow_businessSettings');
+                    if (local) try { businessSettings = JSON.parse(local); } catch(e) {}
                 }
             } catch(e) { console.warn('Sync from Supabase error:', e); }
         }
