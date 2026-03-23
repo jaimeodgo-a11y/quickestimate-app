@@ -4653,12 +4653,19 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             const taxes = subtotal * (estimateTaxRate / 100);
             const totalPrice = subtotal + taxes;
 
+            // Auto-lookup client email from clients list
+            const matchedClient = clients.find(c => c.name === clientName);
+            const clientEmail = matchedClient?.email || '';
+            const clientPhone = matchedClient?.phone || '';
+
             const newEstId = Date.now();
 
             estimates.push({
                 id: newEstId,
                 projectName,
                 clientName,
+                clientEmail,
+                clientPhone,
                 lineItems: [...currentLineItems],
                 total: baseCost,
                 baseCost: baseCost,
@@ -5383,12 +5390,17 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             const taxes = subtotal * (estimateTaxRate / 100);
             const totalPrice = subtotal + taxes;
 
+            const updatedClientName = document.getElementById('clientName').value.trim();
+            const matchedClient = clients.find(c => c.name === updatedClientName);
+
             const estimateIndex = estimates.findIndex(e => e.id === id);
             if (estimateIndex !== -1) {
                 estimates[estimateIndex] = {
                     ...estimates[estimateIndex],
                     projectName,
-                    clientName: document.getElementById('clientName').value.trim(),
+                    clientName: updatedClientName,
+                    clientEmail: matchedClient?.email || estimates[estimateIndex].clientEmail || '',
+                    clientPhone: matchedClient?.phone || estimates[estimateIndex].clientPhone || '',
                     lineItems: JSON.parse(JSON.stringify(currentLineItems)),
                     total: baseCost,
                     baseCost,
@@ -6129,7 +6141,7 @@ canvas{display:block;touch-action:none}
         </button>
         <button class="btn" onclick="sendByEmail()" style="flex:1;min-width:160px;background:#7c3aed;color:#fff">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-          Share via Email
+          Send
         </button>
       </div>
     </div>
@@ -6264,7 +6276,8 @@ function acceptEstimate() {
 
 async function sendByEmail() {
     const btn = document.querySelector('.btn[onclick="sendByEmail()"]');
-    const clientEmail = prompt('Enter client email address:');
+    // Use client email from estimate, fallback to prompt
+    const clientEmail = '${est.clientEmail || ""}' || prompt('Enter client email address:');
     if (!clientEmail) return;
 
     const grand = document.getElementById('grand-total').textContent;
@@ -6301,11 +6314,10 @@ async function sendByEmail() {
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Send failed');
 
-        if (btn) { btn.innerHTML = '✅ Sent!'; btn.style.background = '#16a34a'; }
-        setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = '✉ Share via Email'; btn.style.background = '#7c3aed'; } }, 3000);
+        if (btn) { btn.innerHTML = '✅ Sent to ${est.clientEmail || clientEmail}!'; btn.style.background = '#16a34a'; }
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = '✉ Send'; btn.style.background = '#7c3aed'; } }, 3000);
     } catch(err) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '✉ Share via Email'; }
-        // Fallback to mailto
+        if (btn) { btn.disabled = false; btn.innerHTML = '✉ Send'; }
         window.location.href = 'mailto:' + clientEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(bodyText);
     }
 }
