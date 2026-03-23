@@ -3990,15 +3990,15 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             
             // Then add template items - PRESERVE INDIVIDUAL MARKUP
             template.items.forEach(item => {
-                const rate = item.basePrice || item.rate || 0;
-                const itemMarkup = item.markup || 0;  // Save individual markup
-                
+                const rate = parseFloat(item.basePrice || item.rate || 0) || 0;
+                const itemMarkup = parseFloat(item.markup || 0) || 0;
+
                 currentLineItems.push({
                     id: Date.now() + Math.random(),
                     name: item.name || '',
                     subtitle: item.subtitle || '',
                     rate: parseFloat(rate.toFixed(2)),
-                    qty: item.qty || 0,
+                    qty: parseFloat(item.qty || 0) || 0,
                     unit: item.unit || 'each',
                     total: 0,
                     itemMarkup: itemMarkup,
@@ -4336,7 +4336,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             let grandTotal = 0;
 
             currentLineItems.forEach(item => {
-                const calculatedTotal = item.rate * item.qty;
+                const calculatedTotal = (parseFloat(item.rate)||0) * (parseFloat(item.qty)||0);
                 
                 // Use individual item markup if exists, otherwise use global markup
                 const itemMarkupPct = item.itemMarkup !== undefined ? item.itemMarkup : grossMargin;
@@ -4434,7 +4434,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             let baseCostSum = 0;
             let markupSum = 0;
             currentLineItems.forEach(item => {
-                const itemBase = item.rate * item.qty;
+                const itemBase = (parseFloat(item.rate)||0) * (parseFloat(item.qty)||0);
                 const itemMarkupPct = item.itemMarkup !== undefined ? item.itemMarkup : grossMargin;
                 baseCostSum += itemBase;
                 markupSum += itemBase * (itemMarkupPct / 100);
@@ -4473,7 +4473,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             const desiredTotal = parseFloat(cleanValue) || 0;
             
             // Get base cost and taxes
-            const baseCost = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+            const baseCost = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
             
             if (baseCost === 0) {
                 alert('Cannot adjust total price when base cost is $0');
@@ -4525,7 +4525,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             renderLineItems();
             
             const total = currentLineItems.reduce((sum, item) => {
-                const itemBase = item.rate * item.qty;
+                const itemBase = (parseFloat(item.rate)||0) * (parseFloat(item.qty)||0);
                 const itemMarkup = itemBase * (grossMargin / 100);
                 return sum + itemBase + itemMarkup;
             }, 0);
@@ -4547,7 +4547,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             renderLineItems();
             
             const total = currentLineItems.reduce((sum, item) => {
-                const itemBase = item.rate * item.qty;
+                const itemBase = (parseFloat(item.rate)||0) * (parseFloat(item.qty)||0);
                 const itemMarkup = itemBase * (grossMargin / 100);
                 return sum + itemBase + itemMarkup;
             }, 0);
@@ -4560,13 +4560,13 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
         function updateEstimateTax(change) {
             estimateTaxRate = Math.max(0, Math.min(100, estimateTaxRate + change));
             document.getElementById('estimateTaxRate').value = estimateTaxRate.toFixed(2);
-            const total = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+            const total = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
             updateEstimateSummary(total);
         }
         
         function updateEstimateTaxRate(value) {
             estimateTaxRate = Math.max(0, Math.min(100, parseFloat(value) || 0));
-            const total = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+            const total = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
             updateEstimateSummary(total);
         }
 
@@ -4577,7 +4577,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             
             if (sf > 0) {
                 // Get current total price (with taxes)
-                const total = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+                const total = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
                 const markup = total * (grossMargin / 100);
                 const subtotal = total + markup;
                 const taxes = subtotal * (estimateTaxRate / 100);
@@ -5384,7 +5384,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
                 return;
             }
 
-            const baseCost = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+            const baseCost = currentLineItems.reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
             const markup = baseCost * (grossMargin / 100);
             const subtotal = baseCost + markup;
             const taxes = subtotal * (estimateTaxRate / 100);
@@ -5627,7 +5627,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
                 // Rate, Qty, Amount
                 doc.text(`$${item.rate.toFixed(2)}`, pageWidth - 85, yPos, { align: 'right' });
                 doc.text(`${item.qty} ${item.unit}`, pageWidth - 55, yPos, { align: 'right' });
-                doc.text(`$${(item.rate * item.qty).toLocaleString('en-US', {minimumFractionDigits: 2})}`, pageWidth - 17, yPos, { align: 'right' });
+                doc.text(`$${((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)).toLocaleString('en-US', {minimumFractionDigits: 2})}`, pageWidth - 17, yPos, { align: 'right' });
                 
                 yPos += 10;
             });
@@ -10216,12 +10216,12 @@ Thanks,
                 // Calculate labor cost (hours * rate)
                 const laborCost = est.lineItems
                     .filter(item => item.unit === 'hour')
-                    .reduce((sum, item) => sum + (item.rate * item.qty), 0);
+                    .reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
                 
                 // Calculate material cost (non-hour items)
                 const materialCost = est.lineItems
                     .filter(item => item.unit !== 'hour')
-                    .reduce((sum, item) => sum + (item.rate * item.qty), 0);
+                    .reduce((sum, item) => sum + ((parseFloat(item.rate)||0) * (parseFloat(item.qty)||0)), 0);
                 
                 const totalCost = laborCost + materialCost;
                 const grossProfit = revenue - totalCost;
