@@ -6784,21 +6784,40 @@ Thanks,
             if (!localStorage.getItem('qe_trial_start')) {
                 localStorage.setItem('qe_trial_start', new Date().toISOString());
             }
-            // Check subscription status first
+            // Check localStorage first for immediate response
+            if (localStorage.getItem('qe_active_sub')) {
+                setActivePro();
+                return;
+            }
+            // Then check Supabase
             checkSubscriptionStatus().then(sub => {
                 if (sub?.status === 'active') {
-                    // Hide trial banner — user is paying
-                    const banner = document.getElementById('trialBanner');
-                    if (banner) banner.style.display = 'none';
-                    // Update account badge
-                    const badge = document.getElementById('accountBadge');
-                    if (badge) { badge.textContent = '✅ Pro'; badge.style.background = 'rgba(16,185,129,0.2)'; badge.style.color = '#10b981'; }
-                    const statusEl = document.getElementById('trialAccountStatus');
-                    if (statusEl) statusEl.textContent = 'Active subscriber — Pro plan';
+                    localStorage.setItem('qe_active_sub', '1');
+                    setActivePro();
                 } else {
                     renderTrialBanner();
                 }
             });
+        }
+
+        function setActivePro() {
+            // Hide trial banner
+            const banner = document.getElementById('trialBanner');
+            if (banner) banner.style.display = 'none';
+            // Update nav badge
+            const navBadge = document.getElementById('navTrialBadge');
+            if (navBadge) navBadge.style.display = 'none';
+            // Update account badge
+            const badge = document.getElementById('accountBadge');
+            if (badge) {
+                badge.textContent = '✅ Pro';
+                badge.style.background = 'rgba(16,185,129,0.2)';
+                badge.style.color = '#10b981';
+                badge.style.borderColor = 'rgba(16,185,129,0.4)';
+            }
+            // Update account status text
+            const statusEl = document.getElementById('trialAccountStatus');
+            if (statusEl) statusEl.textContent = '✅ Active subscriber — Pro plan · $29/mo';
         }
 
         function getTrialDaysLeft() {
@@ -11147,6 +11166,8 @@ Thanks,
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
+            // Re-check trial/subscription now that user is logged in
+            initTrial();
             // Check if first time login → send welcome email
             const welcomeKey = 'qe_welcomed_' + user.id;
             if (!localStorage.getItem(welcomeKey)) {
@@ -11411,9 +11432,8 @@ Thanks,
         function closeSubscribedModal() {
             document.getElementById('subscribedModal').style.display = 'none';
             window.history.replaceState({}, '', window.location.pathname);
-            const badge = document.getElementById('navTrialBadge');
-            if (badge) badge.style.display = 'none';
             localStorage.setItem('qe_active_sub', '1');
+            setActivePro();
         }
 
         function checkSubscribedParam() {
