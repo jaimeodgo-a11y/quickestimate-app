@@ -4012,6 +4012,7 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
 
         function closeEstimateForm() {
             document.getElementById('estimateForm').classList.add('hidden');
+            window.currentEditingId = null; // Clear edit mode
             document.getElementById('projectName').value = '';
             document.getElementById('clientName').value = '';
             document.getElementById('startDate').value = '';
@@ -4623,6 +4624,12 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
         }
 
         function saveEstimate(mode) {
+            // If editing existing estimate, call updateEstimate instead
+            if (window.currentEditingId) {
+                updateEstimate(window.currentEditingId, mode);
+                return;
+            }
+
             const projectName = document.getElementById('projectName').value.trim();
             const clientName = document.getElementById('clientName').value.trim();
             const startDate = document.getElementById('startDate').value;
@@ -5327,7 +5334,10 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
         function editEstimate(id) {
             const estimate = estimates.find(e => e.id === id);
             if (!estimate) return;
-            
+
+            // Set global edit ID
+            window.currentEditingId = id;
+
             // Populate the form with existing data
             document.getElementById('projectName').value = estimate.projectName;
             document.getElementById('clientName').value = estimate.clientName;
@@ -5344,43 +5354,35 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
             // Load photos
             currentPhotos = JSON.parse(JSON.stringify(estimate.photos || []));
             renderPhotos();
-            
-            // Load line items (keep as is, don't add Labor)
+
+            // Load line items
             currentLineItems = JSON.parse(JSON.stringify(estimate.lineItems));
-            
+
             // Show form
             document.getElementById('estimateForm').classList.remove('hidden');
             populateTemplateSelector();
             renderLineItems();
-            
-            // Change save button to update
-            const saveBtn = document.querySelector('#estimateForm button[onclick*="saveEstimate"]');
-            if (saveBtn) {
-                saveBtn.textContent = 'Update Estimate';
-                saveBtn.onclick = function() { updateEstimate(id); };
-            }
         }
 
-        function updateEstimate(id) {
+        function updateEstimate(id, mode) {
             const projectName = document.getElementById('projectName').value.trim();
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const depositAmount = parseFloat(document.getElementById('depositAmount').value) || 0;
             const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
             const paymentDate = document.getElementById('paymentDate').value;
-            
+
             if (!projectName) {
                 alert('Please enter a project name');
                 return;
             }
 
-            // Calculate all values
             const baseCost = currentLineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
             const markup = baseCost * (grossMargin / 100);
             const subtotal = baseCost + markup;
             const taxes = subtotal * (estimateTaxRate / 100);
             const totalPrice = subtotal + taxes;
-            
+
             const estimateIndex = estimates.findIndex(e => e.id === id);
             if (estimateIndex !== -1) {
                 estimates[estimateIndex] = {
@@ -5389,12 +5391,12 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
                     clientName: document.getElementById('clientName').value.trim(),
                     lineItems: JSON.parse(JSON.stringify(currentLineItems)),
                     total: baseCost,
-                    baseCost: baseCost,
-                    grossMargin: grossMargin,
-                    markup: markup,
+                    baseCost,
+                    grossMargin,
+                    markup,
                     taxRate: estimateTaxRate,
-                    taxes: taxes,
-                    totalPrice: totalPrice,
+                    taxes,
+                    totalPrice,
                     startDate: startDate || null,
                     endDate: endDate || null,
                     depositAmount,
@@ -5406,10 +5408,17 @@ document.addEventListener('DOMContentLoaded', checkMobileNav);
                     photos: currentPhotos.map(p => ({id: p.id, dataUrl: p.dataUrl, name: p.name})),
                     estimateNumber: document.getElementById('estimateNumber').value.trim() || estimates[estimateIndex].estimateNumber
                 };
-                
+
                 localStorage.setItem('estimateflow_estimates', JSON.stringify(estimates)); saveEstimatesToSupabase();
+                window.currentEditingId = null;
                 closeEstimateForm();
                 renderKanban();
+
+                if (mode === 'send') {
+                    openEstimateView(id);
+                } else {
+                    showToast('✅ Estimate updated!', 'success');
+                }
             }
         }
 
