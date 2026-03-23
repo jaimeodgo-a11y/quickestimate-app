@@ -11017,6 +11017,41 @@ Thanks,
             }
         }
 
+        async function sendWelcomeEmail(email, name) {
+            try {
+                await fetch('https://quickestimate.app/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: email,
+                        subject: '⚡ Welcome to QuickEstimate — Your 14-Day Trial Starts Now!',
+                        from_name: 'QuickEstimate',
+                        reply_to: 'support@quickestimate.app',
+                        html: `<div style="font-family:sans-serif;max-width:580px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+                            <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center">
+                                <div style="font-size:48px;margin-bottom:8px">⚡</div>
+                                <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800">Welcome to QuickEstimate!</h1>
+                                <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px">Your 14-day free trial starts today</p>
+                            </div>
+                            <div style="padding:32px">
+                                <p style="font-size:16px;line-height:1.6">Hi ${name || 'there'} 👋,</p>
+                                <p style="font-size:15px;color:#ccc;line-height:1.6">You're all set! Here's what you can do with QuickEstimate:</p>
+                                <div style="margin:20px 0">
+                                    ${['📄 Create professional estimates in 60 seconds','📋 Use 22+ pre-built templates for concrete, pavers, painting & more','✉️ Send estimates directly to clients via email','✍️ Get digital signatures from clients','📊 Track revenue and projects on your dashboard','📱 Works on phone, tablet and desktop'].map(f => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px">${f}</div>`).join('')}
+                                </div>
+                                <div style="text-align:center;margin:28px 0">
+                                    <a href="https://app.quickestimate.app" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:800;font-size:16px">⚡ Open QuickEstimate →</a>
+                                </div>
+                                <p style="font-size:13px;color:#666;line-height:1.6">Your trial lasts 14 days — no credit card required. After that, continue for just <strong style="color:#10b981">$29/month</strong> with everything included.</p>
+                                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:24px 0">
+                                <p style="font-size:12px;color:#555">QuickEstimate · estimates@quickestimate.app<br>Questions? Just reply to this email.</p>
+                            </div>
+                        </div>`
+                    })
+                });
+            } catch(e) { console.warn('Welcome email failed:', e); }
+        }
+
         async function handleSignup() {
             const name     = document.getElementById('signupName').value.trim();
             const email    = document.getElementById('signupEmail').value.trim();
@@ -11037,6 +11072,8 @@ Thanks,
                     options: { data: { full_name: name, business_type: business } }
                 });
                 if (error) throw error;
+                // Send welcome email
+                sendWelcomeEmail(email, name);
                 if (data.user && !data.session) {
                     showAuthSuccess('✅ Check your email to confirm your account!');
                 } else {
@@ -11110,7 +11147,14 @@ Thanks,
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
-            // Sync user data from Supabase, then check if onboarding needed
+            // Check if first time login → send welcome email
+            const welcomeKey = 'qe_welcomed_' + user.id;
+            if (!localStorage.getItem(welcomeKey)) {
+                localStorage.setItem(welcomeKey, '1');
+                const name = user.user_metadata?.full_name || user.email?.split('@')[0];
+                sendWelcomeEmail(user.email, name);
+            }
+            // Sync user data from Supabase
             syncFromSupabase().then(() => {
                 const isNew = !localStorage.getItem('qe_onboarded_' + user.id);
                 if (isNew && !businessSettings?.name) {
