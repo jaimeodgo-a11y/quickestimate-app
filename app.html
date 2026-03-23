@@ -6299,8 +6299,8 @@ async function sendByEmail() {
     // Service description (strip HTML tags for cleaner display)
     const serviceDesc = '${(est.serviceDescription||"").replace(/<[^>]*>/g,"").trim()}';
 
-    // Approval link — links back to this same page
-    const approvalLink = window.location.href;
+    // Approval link — permanent URL with estimate ID
+    const approvalLink = 'https://app.quickestimate.app?view=${est.id}';
 
     const htmlBody =
         '<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">' +
@@ -12048,6 +12048,21 @@ Thanks,
             initAuth();
             checkSubscribedParam();
             applyLanguage();
+
+            // Handle ?view=ID — auto-open estimate for client approval
+            const viewParams = new URLSearchParams(window.location.search);
+            const viewId = viewParams.get('view');
+            if (viewId) {
+                // Wait for data to load then open estimate view
+                setTimeout(() => {
+                    const estId = parseInt(viewId);
+                    const est = estimates.find(e => e.id === estId);
+                    if (est) {
+                        openEstimateView(estId);
+                        window.history.replaceState({}, '', window.location.pathname);
+                    }
+                }, 1500);
+            }
             calculateExcavation('gravel');
             calculateExcavation('sand');
             calculateExcavation('topsoil');
