@@ -11407,6 +11407,28 @@ Thanks,
                 : baseUrl;
             window.open(url, '_blank');
         }
+
+        function closeSubscribedModal() {
+            document.getElementById('subscribedModal').style.display = 'none';
+            window.history.replaceState({}, '', window.location.pathname);
+            const badge = document.getElementById('navTrialBadge');
+            if (badge) badge.style.display = 'none';
+            localStorage.setItem('qe_active_sub', '1');
+        }
+
+        function checkSubscribedParam() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('subscribed') === '1') {
+                const show = () => {
+                    const modal = document.getElementById('subscribedModal');
+                    if (modal) modal.style.display = 'flex';
+                    const banner = document.getElementById('trialBanner');
+                    if (banner) banner.style.display = 'none';
+                };
+                if (currentUser) show();
+                else setTimeout(show, 3000);
+            }
+        }
         // ==================== STRIPE ====================
         let obSelectedType = '';
 
@@ -11690,6 +11712,7 @@ Thanks,
             switchCalcCategory('broomed');
             calculateExcavation('soil');
             initAuth();
+            checkSubscribedParam();
             calculateExcavation('gravel');
             calculateExcavation('sand');
             calculateExcavation('topsoil');
@@ -12670,6 +12693,36 @@ Thanks,
             <button onclick="addBlankService()" style="width:100%;background:none;border:2px dashed var(--color-border);border-radius:8px;padding:10px;color:var(--color-muted-fg);font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onmouseover="this.style.borderColor='#10b981';this.style.color='#10b981'" onmouseout="this.style.borderColor='var(--color-border)';this.style.color='var(--color-muted-fg)'">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add custom service manually
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- THANKS FOR SUBSCRIBING MODAL -->
+<div id="subscribedModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--color-card);border:1px solid rgba(16,185,129,0.3);border-radius:24px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);text-align:center">
+        <!-- Confetti header -->
+        <div style="background:linear-gradient(135deg,#065f46,#10b981,#059669);padding:40px 32px;position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;opacity:0.1;font-size:60px;line-height:1;overflow:hidden">🎊🎉🎊🎉🎊🎉🎊🎉🎊🎉🎊🎉</div>
+            <div style="position:relative;font-size:3.5rem;margin-bottom:12px">🎉</div>
+            <h1 style="color:#fff;font-size:1.8rem;font-weight:800;margin:0 0 8px">You're a Pro!</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:0;font-size:1rem">Welcome to QuickEstimate Pro — you're all set!</p>
+        </div>
+        <!-- Content -->
+        <div style="padding:32px">
+            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:14px;padding:20px;margin-bottom:24px;text-align:left">
+                <div style="font-size:0.8rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">✅ What's unlocked</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="font-size:0.9rem;color:var(--color-fg)">⚡ Unlimited estimates & invoices</div>
+                    <div style="font-size:0.9rem;color:var(--color-fg)">📋 All 22+ professional templates</div>
+                    <div style="font-size:0.9rem;color:var(--color-fg)">✉️ Direct email to clients</div>
+                    <div style="font-size:0.9rem;color:var(--color-fg)">📊 Revenue dashboard & analytics</div>
+                    <div style="font-size:0.9rem;color:var(--color-fg)">🧮 Smart calculators for every item</div>
+                </div>
+            </div>
+            <p style="font-size:0.85rem;color:var(--color-muted-fg);margin-bottom:24px">A confirmation email is on its way. You'll be billed <strong style="color:var(--color-fg)">$29/month</strong> — cancel anytime.</p>
+            <button onclick="closeSubscribedModal()" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,.3)">
+                ⚡ Start Using QuickEstimate Pro →
             </button>
         </div>
     </div>
