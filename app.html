@@ -11364,48 +11364,28 @@ Thanks,
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
-            // Re-check trial/subscription now that user is logged in
             initTrial();
-            // Check if first time login → send welcome email
-            const welcomeKey = 'qe_welcomed_' + user.id;
-            if (!localStorage.getItem(welcomeKey)) {
-                localStorage.setItem(welcomeKey, '1');
-                const name = user.user_metadata?.full_name || user.email?.split('@')[0];
-                sendWelcomeEmail(user.email, name);
-            }
-            // Sync user data from Supabase
+
+            // Sync FIRST — then decide welcome email + onboarding based on Supabase data
             syncFromSupabase().then(() => {
-                const onboardedKey      = 'qe_onboarded_' + user.id;
-                const onboardedKeyEmail = 'qe_onboarded_' + (user.email || '');
+                const isNewUser = !businessSettings?._welcomed &&
+                                  !(estimates && estimates.length > 0) &&
+                                  !(clients && clients.length > 0);
 
-                const markOnboarded = () => {
-                    localStorage.setItem(onboardedKey, '1');
-                    localStorage.setItem(onboardedKeyEmail, '1');
-                };
+                // Welcome email — only for truly new users, flag stored in Supabase
+                if (isNewUser && !businessSettings?._welcomed) {
+                    const name = user.user_metadata?.full_name || user.email?.split('@')[0];
+                    sendWelcomeEmail(user.email, name);
+                    // Mark welcomed in businessSettings so it persists across devices
+                    businessSettings._welcomed = true;
+                    saveBusinessSettingsToSupabase();
+                }
 
-                // Already flagged as onboarded → skip
-                if (localStorage.getItem(onboardedKey) || localStorage.getItem(onboardedKeyEmail)) return;
-
-                // Has business name → not a new user
-                if (businessSettings?.name) { markOnboarded(); return; }
-
-                // Check raw localStorage for business name
-                try {
-                    const saved = localStorage.getItem('estimateflow_businessSettings');
-                    if (saved && JSON.parse(saved)?.name) { markOnboarded(); return; }
-                } catch(e) {}
-
-                // Has existing estimates → definitely not a new user
-                if (estimates && estimates.length > 0) { markOnboarded(); return; }
-
-                // Check raw localStorage for estimates
-                try {
-                    const savedEst = localStorage.getItem('estimateflow_estimates');
-                    if (savedEst && JSON.parse(savedEst)?.length > 0) { markOnboarded(); return; }
-                } catch(e) {}
-
-                // Truly new user — show onboarding
-                showOnboarding(user);
+                // Onboarding — only for truly new users with no data anywhere
+                if (isNewUser) {
+                    showOnboarding(user);
+                }
+                // else: existing user on new device → go straight to app
             });
         }
 
@@ -11874,6 +11854,9 @@ Thanks,
             if (currentUser) {
                 localStorage.setItem('qe_onboarded_' + currentUser.id, '1');
                 localStorage.setItem('qe_onboarded_' + (currentUser.email || ''), '1');
+                // Also persist in Supabase so new devices don't re-show onboarding
+                businessSettings._welcomed = true;
+                saveBusinessSettingsToSupabase();
             }
             document.getElementById('onboardingModal').style.display = 'none';
             showSection('estimates');
@@ -11925,19 +11908,6 @@ Thanks,
                 }
             } catch(e) { console.warn('Sync from Supabase error:', e); }
 
-            // After all data is loaded: mark as onboarded if user has ANY existing data
-            // This handles new devices where localStorage is empty but Supabase has data
-            if (currentUser) {
-                const onboardedKey      = 'qe_onboarded_' + currentUser.id;
-                const onboardedKeyEmail = 'qe_onboarded_' + (currentUser.email || '');
-                if (!localStorage.getItem(onboardedKey) && !localStorage.getItem(onboardedKeyEmail)) {
-                    const hasData = (businessSettings?.name) || (estimates && estimates.length > 0) || (clients && clients.length > 0);
-                    if (hasData) {
-                        localStorage.setItem(onboardedKey, '1');
-                        localStorage.setItem(onboardedKeyEmail, '1');
-                    }
-                }
-            }
         }
 
         async function saveEstimatesToSupabase() {
