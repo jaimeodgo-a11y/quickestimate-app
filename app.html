@@ -11368,24 +11368,28 @@ Thanks,
 
             // Sync FIRST — then decide welcome email + onboarding based on Supabase data
             syncFromSupabase().then(() => {
-                const isNewUser = !businessSettings?._welcomed &&
-                                  !(estimates && estimates.length > 0) &&
-                                  !(clients && clients.length > 0);
+                // If user has ANY existing data, they are NOT new — mark welcomed immediately
+                const hasExistingData = (estimates && estimates.length > 0) ||
+                                        (clients && clients.length > 0) ||
+                                        (businessSettings?.name);
 
-                // Welcome email — only for truly new users, flag stored in Supabase
-                if (isNewUser && !businessSettings?._welcomed) {
-                    const name = user.user_metadata?.full_name || user.email?.split('@')[0];
-                    sendWelcomeEmail(user.email, name);
-                    // Mark welcomed in businessSettings so it persists across devices
+                if (hasExistingData && !businessSettings?._welcomed) {
+                    // Existing user on new device — silently mark as welcomed so this never fires again
                     businessSettings._welcomed = true;
                     saveBusinessSettingsToSupabase();
                 }
 
-                // Onboarding — only for truly new users with no data anywhere
+                const isNewUser = !businessSettings?._welcomed && !hasExistingData;
+
+                // Welcome email — only once, only for brand new users
                 if (isNewUser) {
+                    const name = user.user_metadata?.full_name || user.email?.split('@')[0];
+                    sendWelcomeEmail(user.email, name);
+                    businessSettings._welcomed = true;
+                    saveBusinessSettingsToSupabase();
                     showOnboarding(user);
                 }
-                // else: existing user on new device → go straight to app
+                // else: existing user → go straight to app, no email, no onboarding
             });
         }
 
