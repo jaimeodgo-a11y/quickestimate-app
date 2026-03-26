@@ -11924,6 +11924,20 @@ Thanks,
                     if (local) try { businessSettings = JSON.parse(local); } catch(e) {}
                 }
             } catch(e) { console.warn('Sync from Supabase error:', e); }
+
+            // After all data is loaded: mark as onboarded if user has ANY existing data
+            // This handles new devices where localStorage is empty but Supabase has data
+            if (currentUser) {
+                const onboardedKey      = 'qe_onboarded_' + currentUser.id;
+                const onboardedKeyEmail = 'qe_onboarded_' + (currentUser.email || '');
+                if (!localStorage.getItem(onboardedKey) && !localStorage.getItem(onboardedKeyEmail)) {
+                    const hasData = (businessSettings?.name) || (estimates && estimates.length > 0) || (clients && clients.length > 0);
+                    if (hasData) {
+                        localStorage.setItem(onboardedKey, '1');
+                        localStorage.setItem(onboardedKeyEmail, '1');
+                    }
+                }
+            }
         }
 
         async function saveEstimatesToSupabase() {
