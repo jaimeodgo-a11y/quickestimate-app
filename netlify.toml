@@ -6,7 +6,6 @@
 [functions]
   node_bundler = "esbuild"
 
-# app.quickestimate.app → serve app.html
 [[redirects]]
   from = "https://app.quickestimate.app/*"
   to = "/app.html"
@@ -17,3 +16,4 @@
   for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
+    Content-Security-Policy = "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.sheetjs.com;"
