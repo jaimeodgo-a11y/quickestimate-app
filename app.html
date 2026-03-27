@@ -11392,12 +11392,24 @@ Thanks,
             // Sync all data
             await syncFromSupabase();
 
-            // Final check after sync
+            // Final check after sync — wait extra time for data to settle
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             if (!isExistingUser) {
                 isExistingUser = (estimates && estimates.length > 0) ||
                                  (clients && clients.length > 0) ||
                                  !!businessSettings?.name ||
                                  !!businessSettings?._welcomed;
+            }
+
+            // Also check localStorage as final fallback
+            if (!isExistingUser) {
+                try {
+                    const savedEst = localStorage.getItem('estimateflow_estimates');
+                    if (savedEst && JSON.parse(savedEst)?.length > 0) isExistingUser = true;
+                    const savedBiz = localStorage.getItem('estimateflow_businessSettings');
+                    if (savedBiz && JSON.parse(savedBiz)?.name) isExistingUser = true;
+                } catch(e) {}
             }
 
             if (isExistingUser) {
@@ -11814,6 +11826,21 @@ Thanks,
         let obSelectedType = '';
 
         function showOnboarding(user) {
+            // Never show onboarding if user has any existing data
+            const hasData = (estimates && estimates.length > 0) ||
+                            (clients && clients.length > 0) ||
+                            !!businessSettings?.name ||
+                            !!businessSettings?._welcomed;
+            if (hasData) return;
+
+            // Also check localStorage directly
+            try {
+                const savedEst = localStorage.getItem('estimateflow_estimates');
+                if (savedEst && JSON.parse(savedEst)?.length > 0) return;
+                const savedBiz = localStorage.getItem('estimateflow_businessSettings');
+                if (savedBiz && JSON.parse(savedBiz)?.name) return;
+            } catch(e) {}
+
             const modal = document.getElementById('onboardingModal');
             if (!modal) return;
             modal.style.display = 'flex';
