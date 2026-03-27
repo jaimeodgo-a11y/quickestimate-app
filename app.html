@@ -11359,38 +11359,63 @@ Thanks,
         }
 
         // ── On Success ───────────────────────────────────────
-        function onLoginSuccess(user) {
+        async function onLoginSuccess(user) {
             currentUser = user;
             hideAuthScreen();
             updateUserMenu(user);
             updateAccountProfile(user);
             initTrial();
 
-            // Sync FIRST — then decide welcome email + onboarding based on Supabase data
-            syncFromSupabase().then(() => {
-                // If user has ANY existing data, they are NOT new — mark welcomed immediately
-                const hasExistingData = (estimates && estimates.length > 0) ||
-                                        (clients && clients.length > 0) ||
-                                        (businessSettings?.name);
+            // Check directly in Supabase if this user has ANY estimates (device-independent)
+            let isExistingUser = false;
+            if (supabaseClient) {
+                try {
+                    const { data: estCheck } = await supabaseClient
+                        .from('estimates')
+                        .select('id')
+                        .limit(1);
+                    if (estCheck && estCheck.length > 0) isExistingUser = true;
+                } catch(e) {}
 
-                if (hasExistingData && !businessSettings?._welcomed) {
-                    // Existing user on new device — silently mark as welcomed so this never fires again
+                if (!isExistingUser) {
+                    try {
+                        const { data: bizCheck } = await supabaseClient
+                            .from('business_settings')
+                            .select('data')
+                            .eq('user_id', user.id)
+                            .single();
+                        if (bizCheck?.data?.name || bizCheck?.data?._welcomed) isExistingUser = true;
+                    } catch(e) {}
+                }
+            }
+
+            // Sync all data
+            await syncFromSupabase();
+
+            // Final check after sync
+            if (!isExistingUser) {
+                isExistingUser = (estimates && estimates.length > 0) ||
+                                 (clients && clients.length > 0) ||
+                                 !!businessSettings?.name ||
+                                 !!businessSettings?._welcomed;
+            }
+
+            if (isExistingUser) {
+                // Existing user — mark _welcomed so future logins skip this check
+                if (!businessSettings._welcomed) {
                     businessSettings._welcomed = true;
                     saveBusinessSettingsToSupabase();
                 }
+                // Go straight to app — no email, no onboarding
+                return;
+            }
 
-                const isNewUser = !businessSettings?._welcomed && !hasExistingData;
-
-                // Welcome email — only once, only for brand new users
-                if (isNewUser) {
-                    const name = user.user_metadata?.full_name || user.email?.split('@')[0];
-                    sendWelcomeEmail(user.email, name);
-                    businessSettings._welcomed = true;
-                    saveBusinessSettingsToSupabase();
-                    showOnboarding(user);
-                }
-                // else: existing user → go straight to app, no email, no onboarding
-            });
+            // Brand new user — send welcome email once and show onboarding
+            const name = user.user_metadata?.full_name || user.email?.split('@')[0];
+            sendWelcomeEmail(user.email, name);
+            businessSettings._welcomed = true;
+            saveBusinessSettingsToSupabase();
+            showOnboarding(user);
         }
 
         function updateAccountProfile(user) {
